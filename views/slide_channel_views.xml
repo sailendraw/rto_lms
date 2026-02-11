@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ====================================================================
+         Slide Channel (Course) - RTO Extension Views
+         ==================================================================== -->
+
+    <!-- Form View Extension -->
+    <record id="view_slide_channel_form_rto" model="ir.ui.view">
+        <field name="name">slide.channel.form.rto</field>
+        <field name="model">slide.channel</field>
+        <field name="inherit_id" ref="website_slides.view_slide_channel_form"/>
+        <field name="arch" type="xml">
+            <!-- Add RTO toggle at the top -->
+            <field name="tag_ids" position="before">
+                <field name="is_rto_course"/>
+            </field>
+
+            <!-- Add RTO Notebook Page -->
+            <xpath expr="//notebook" position="inside">
+                <page string="RTO Unit Details" name="rto_details">
+                    <group>
+                        <group string="Unit of Competency">
+                            <field name="unit_id" required="is_rto_course"/>
+                            <field name="unit_code" readonly="1"/>
+                            <field name="nominal_hours"/>
+                        </group>
+                        <group string="Qualification">
+                            <field name="qualification_id"/>
+                            <field name="qualification_code" readonly="1"/>
+                            <field name="unit_type"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Training Package">
+                            <field name="training_package_code" readonly="1"/>
+                            <field name="training_package_title" readonly="1"/>
+                        </group>
+                        <group string="Intake/Cohort">
+                            <field name="intake_code" required="is_rto_course" placeholder="e.g., 2026_S1"/>
+                            <field name="intake_year" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Delivery Details">
+                            <field name="delivery_mode_id"/>
+                            <field name="delivery_mode_code" readonly="1"/>
+                            <field name="delivery_start_date"/>
+                            <field name="delivery_end_date"/>
+                            <field name="delivery_location_id"/>
+                        </group>
+                        <group string="Trainers">
+                            <field name="trainer_ids" widget="many2many_tags"
+                                   domain="[('is_rto_trainer', '=', True)]"/>
+                        </group>
+                    </group>
+                    <group string="RTO Course Reference">
+                        <field name="rto_display_name" readonly="1"/>
+                    </group>
+                </page>
+
+                <page string="RTO Statistics" name="rto_statistics">
+                    <group>
+                        <group string="Enrollment">
+                            <field name="enrolled_student_count"/>
+                        </group>
+                        <group string="Compliance">
+                            <field name="assessment_count"/>
+                            <field name="evidence_count"/>
+                        </group>
+                    </group>
+                    <group string="Actions">
+                        <button name="action_view_evidence" type="object"
+                                string="View Evidence Log" class="btn-secondary"
+                                icon="fa-file-text-o"/>
+                        <button name="action_view_outcomes" type="object"
+                                string="View Assessment Outcomes" class="btn-secondary"
+                                icon="fa-check-square-o"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Tree View Extension -->
+    <record id="view_slide_channel_tree_rto" model="ir.ui.view">
+        <field name="name">slide.channel.tree.rto</field>
+        <field name="model">slide.channel</field>
+        <field name="inherit_id" ref="website_slides.slide_channel_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="is_rto_course" optional="show"/>
+                <field name="unit_code" optional="show"/>
+                <field name="intake_code" optional="show"/>
+                <field name="qualification_code" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Search View Extension -->
+    <record id="view_slide_channel_search_rto" model="ir.ui.view">
+        <field name="name">slide.channel.search.rto</field>
+        <field name="model">slide.channel</field>
+        <field name="inherit_id" ref="website_slides.slide_channel_view_search"/>
+        <field name="arch" type="xml">
+            <!-- Add RTO fields after existing fields -->
+            <field name="tag_ids" position="after">
+                <field name="unit_code"/>
+                <field name="intake_code"/>
+                <field name="qualification_code"/>
+                <field name="training_package_code"/>
+            </field>
+            <!-- Add RTO filter after Published filter -->
+            <filter name="filter_published" position="after">
+                <filter string="RTO Courses" name="rto_courses" domain="[('is_rto_course', '=', True)]"/>
+                <separator/>
+                <filter string="Unit" name="group_unit" context="{'group_by': 'unit_id'}"/>
+                <filter string="Qualification" name="group_qualification" context="{'group_by': 'qualification_id'}"/>
+                <filter string="Intake Year" name="group_intake_year" context="{'group_by': 'intake_year'}"/>
+                <filter string="Delivery Mode" name="group_delivery_mode" context="{'group_by': 'delivery_mode_id'}"/>
+            </filter>
+        </field>
+    </record>
+
+    <!-- RTO Unit Courses Action -->
+    <record id="action_rto_unit_courses" model="ir.actions.act_window">
+        <field name="name">RTO Unit Courses</field>
+        <field name="res_model">slide.channel</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('is_rto_course', '=', True)]</field>
+        <field name="context">{'default_is_rto_course': True, 'search_default_rto_courses': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first RTO Unit Course
+            </p>
+            <p>
+                Each course represents ONE unit of competency delivered to ONE cohort/intake.
+                Link the unit, set the intake code (e.g., 2026_S1), and add your learning activities.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Complete override of fullscreen quiz template to support checkboxes for multiple choice multi -->
+    <t t-name="rto_lms.slide.quiz">
+        <div class="o_wslides_fs_quiz_container o_wslides_wrap h-100 w-100 overflow-auto pb-5">
+            <div class="container">
+                <div t-if="widget.quiz.description_safe" t-out="widget.quiz.description_safe" class="mt-3" />
+                <div t-foreach="widget.quiz.questions" t-as="question" t-key="question_index"
+                     t-attf-class="o_wslides_js_lesson_quiz_question mt-5 mb-4 #{widget.slide.completed ? 'completed-disabled' : ''}"
+                     t-att-data-question-id="question.id" t-att-data-title="question.question">
+                    <div class="h4">
+                        <small class="text-muted"><span t-out="question_index+1"/>. </small> <span t-out="question.question"/>
+                    </div>
+                    
+                    <div class="list-group">
+                        <!-- Multiple choice multi - checkboxes -->
+                        <t t-if="question.question_type == 'multiple_choice_multi'">
+                            <t t-foreach="question.answer_ids" t-as="answer" t-key="answer_index">
+                                <a t-att-data-answer-id="answer.id" href="#"
+                                    t-att-data-text="answer.text_value"
+                                    t-attf-class="o_wslides_quiz_answer o_wslides_quiz_answer_multi list-group-item d-flex align-items-center list-group-item-action #{widget.slide.completed &amp;&amp; answer.is_correct ? 'list-group-item-success' : '' }">
+                                    <label class="my-0 d-flex align-items-center justify-content-center me-2">
+                                        <input type="checkbox"
+                                            t-att-name="'question_' + question.id"
+                                            t-att-value="answer.id"
+                                            class="d-none"/>
+                                        <i t-att-class="'fa fa-square-o text-400' + (!(widget.slide.completed &amp;&amp; answer.is_correct) ? '' : ' d-none')"></i>
+                                        <i class="fa fa-times-circle text-danger d-none"></i>
+                                        <i t-att-class="'fa fa-check-square text-success' + (widget.slide.completed &amp;&amp; answer.is_correct ? '' :  ' d-none')"></i>
+                                    </label>
+                                    <span t-out="answer.text_value"/>
+                                </a>
+                            </t>
+                        </t>
+                        
+                        <!-- True/False - use answer_ids -->
+                        <t t-elif="question.question_type == 'true_false'">
+                            <t t-foreach="question.answer_ids" t-as="answer" t-key="answer_index">
+                                <a t-att-data-answer-id="answer.id" href="#"
+                                    t-att-data-text="answer.text_value"
+                                    t-attf-class="o_wslides_quiz_answer list-group-item d-flex align-items-center list-group-item-action #{widget.slide.completed &amp;&amp; answer.is_correct ? 'list-group-item-success' : '' }">
+                                    <label class="my-0 d-flex align-items-center justify-content-center me-2">
+                                        <input type="radio"
+                                            t-att-name="question.id"
+                                            t-att-value="answer.id"
+                                            class="d-none"/>
+                                        <i t-att-class="'fa fa-circle text-400' + (!(widget.slide.completed &amp;&amp; answer.is_correct) ? '' : ' d-none')"></i>
+                                        <i class="fa fa-times-circle text-danger d-none"></i>
+                                        <i t-att-class="'fa fa-check-circle text-success' + (widget.slide.completed &amp;&amp; answer.is_correct ? '' :  ' d-none')"></i>
+                                    </label>
+                                    <span t-out="answer.text_value"/>
+                                </a>
+                            </t>
+                        </t>
+                        
+                        <!-- Short Answer - text input -->
+                        <t t-elif="question.question_type == 'short_answer'">
+                            <div class="list-group-item">
+                                <input type="text" 
+                                    t-att-name="'question_' + question.id"
+                                    t-att-data-question-id="question.id"
+                                    t-att-value="question.student_answer || ''"
+                                    class="form-control o_wslides_quiz_text_answer"
+                                    placeholder="Type your answer here..."
+                                    t-att-disabled="widget.slide.completed"/>
+                                <t t-if="widget.slide.completed and question.expected_answer_text">
+                                    <div class="mt-2 text-success">
+                                        <i class="fa fa-check-circle"/> Expected answer: <strong t-out="question.expected_answer_text"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </t>
+                        
+                        <!-- Numerical - number input -->
+                        <t t-elif="question.question_type == 'numerical'">
+                            <div class="list-group-item">
+                                <input type="number" 
+                                    t-att-name="'question_' + question.id"
+                                    t-att-data-question-id="question.id"
+                                    t-att-value="question.student_answer || ''"
+                                    class="form-control o_wslides_quiz_numerical_answer"
+                                    placeholder="Enter a number..."
+                                    step="any"
+                                    t-att-disabled="widget.slide.completed"/>
+                                <t t-if="widget.slide.completed and question.expected_answer_text">
+                                    <div class="mt-2 text-success">
+                                        <i class="fa fa-check-circle"/> Expected answer: <strong t-out="question.expected_answer_text"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </t>
+                        
+                        <!-- Essay - textarea -->
+                        <t t-elif="question.question_type == 'essay'">
+                            <div class="list-group-item">
+                                <textarea 
+                                    t-att-name="'question_' + question.id"
+                                    t-att-data-question-id="question.id"
+                                    class="form-control o_wslides_quiz_essay_answer"
+                                    rows="5"
+                                    placeholder="Type your essay here..."
+                                    t-att-disabled="widget.slide.completed"/>
+                            </div>
+                        </t>
+                        
+                        <!-- Multiple choice single - radio buttons (default) -->
+                        <t t-else="">
+                            <t t-foreach="question.answer_ids" t-as="answer" t-key="answer_index">
+                                <a t-att-data-answer-id="answer.id" href="#"
+                                    t-att-data-text="answer.text_value"
+                                    t-attf-class="o_wslides_quiz_answer list-group-item d-flex align-items-center list-group-item-action #{widget.slide.completed &amp;&amp; answer.is_correct ? 'list-group-item-success' : '' }">
+                                    <label class="my-0 d-flex align-items-center justify-content-center me-2">
+                                        <input type="radio"
+                                            t-att-name="question.id"
+                                            t-att-value="answer.id"
+                                            class="d-none"/>
+                                        <i t-att-class="'fa fa-circle text-400' + (!(widget.slide.completed &amp;&amp; answer.is_correct) ? '' : ' d-none')"></i>
+                                        <i class="fa fa-times-circle text-danger d-none"></i>
+                                        <i t-att-class="'fa fa-check-circle text-success' + (widget.slide.completed &amp;&amp; answer.is_correct ? '' :  ' d-none')"></i>
+                                    </label>
+                                    <span t-out="answer.text_value"/>
+                                </a>
+                            </t>
+                        </t>
+                        
+                        <div t-attf-class="o_wslides_quiz_answer_info list-group-item list-group-item-info #{correct_answer_comment ? '' : 'd-none'}">
+                            <i class="fa fa-info-circle"/>
+                            <span class="o_wslides_quiz_answer_comment ms-2">
+                                <t t-if="correct_answer_comment" t-out="correct_answer_comment"/>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div t-if="!widget.slide.completed" class="o_wslides_js_lesson_quiz_validation pt-3"/>
+                <div t-else="" class="row">
+                    <div class="o_wslides_js_lesson_quiz_validation col py-2 bg-100 mb-2 border-bottom"/>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

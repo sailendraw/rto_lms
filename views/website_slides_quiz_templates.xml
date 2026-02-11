@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- 
+    RTO LMS Quiz Template Extensions
+    Extends standard Odoo website_slides quiz templates to support enhanced question types
+    -->
+    
+    <!-- Override quiz question template to support enhanced RTO question types -->
+    <template id="lesson_content_quiz_question_rto" inherit_id="website_slides.lesson_content_quiz_question" name="RTO Quiz Question (Enhanced Types)">
+        
+        <!-- Replace the answer list section to support different question types -->
+        <xpath expr="//div[@class='list-group']" position="replace">
+            <div class="list-group">
+                <!-- Multiple choice (multiple answers allowed) -->
+                <t t-if="question.get('question_type') == 'multiple_choice_multi'">
+                    <t t-foreach="question['answer_ids']" t-as="answer">
+                        <a t-att-data-answer-id="answer['id']" href="#"
+                            t-att-data-text="answer['text_value']" t-att-data-is-correct="answer['is_correct']" t-att-data-comment="answer['comment']"
+                            t-att-class="'o_wslides_quiz_answer o_wslides_quiz_answer_multi list-group-item list-group-item-action d-flex align-items-center %s' % ('list-group-item-success' if slide_completed and answer['is_correct'] else '')">
+                            <label class="my-0 d-flex align-items-center justify-content-center me-2">
+                                <input type="checkbox"
+                                    t-att-name="'question_%s' % question['id']"
+                                    t-att-value="answer['id']"
+                                    class="d-none"
+                                    t-att-disabled="True if not slide.channel_id.is_member or slide_completed else ''"/>
+                                <i t-att-class="'fa fa-square-o text-400 %s' % ('d-none' if slide_completed and answer['is_correct'] else '')"/>
+                                <i class="fa fa-times-circle text-danger d-none"></i>
+                                <i t-att-class="'fa fa-check-square text-success %s' % ('d-none' if not (slide_completed and answer['is_correct']) else '')"></i>
+                            </label>
+                            <span t-out="answer['text_value']"/>
+                        </a>
+                        <t t-if="slide_completed and answer['is_correct']" t-set="correct_answer_comment" t-value="answer['comment']"/>
+                    </t>
+                </t>
+                
+                <!-- True/False question -->
+                <t t-elif="question.get('question_type') == 'true_false'">
+                    <a href="#" data-answer-value="true"
+                        t-att-data-question-id="question['id']"
+                        t-att-class="'o_wslides_quiz_answer o_wslides_quiz_answer_tf list-group-item list-group-item-action d-flex align-items-center %s' % ('list-group-item-success' if slide_completed and question.get('correct_answer_tf') == 'true' else '')">
+                        <label class="my-0 d-flex align-items-center justify-content-center me-2">
+                            <input type="radio"
+                                t-att-name="'question_%s' % question['id']"
+                                value="true"
+                                class="d-none"
+                                t-att-disabled="True if not slide.channel_id.is_member or slide_completed else ''"/>
+                            <i t-att-class="'fa fa-circle text-400 %s' % ('d-none' if slide_completed and question.get('correct_answer_tf') == 'true' else '')"/>
+                            <i class="fa fa-times-circle text-danger d-none"></i>
+                            <i t-att-class="'fa fa-check-circle text-success %s' % ('d-none' if not (slide_completed and question.get('correct_answer_tf') == 'true') else '')"></i>
+                        </label>
+                        <span>True</span>
+                    </a>
+                    <a href="#" data-answer-value="false"
+                        t-att-data-question-id="question['id']"
+                        t-att-class="'o_wslides_quiz_answer o_wslides_quiz_answer_tf list-group-item list-group-item-action d-flex align-items-center %s' % ('list-group-item-success' if slide_completed and question.get('correct_answer_tf') == 'false' else '')">
+                        <label class="my-0 d-flex align-items-center justify-content-center me-2">
+                            <input type="radio"
+                                t-att-name="'question_%s' % question['id']"
+                                value="false"
+                                class="d-none"
+                                t-att-disabled="True if not slide.channel_id.is_member or slide_completed else ''"/>
+                            <i t-att-class="'fa fa-circle text-400 %s' % ('d-none' if slide_completed and question.get('correct_answer_tf') == 'false' else '')"/>
+                            <i class="fa fa-times-circle text-danger d-none"></i>
+                            <i t-att-class="'fa fa-check-circle text-success %s' % ('d-none' if not (slide_completed and question.get('correct_answer_tf') == 'false') else '')"></i>
+                        </label>
+                        <span>False</span>
+                    </a>
+                </t>
+                
+                <!-- Short answer question -->
+                <t t-elif="question.get('question_type') == 'short_answer'">
+                    <div class="list-group-item">
+                        <input type="text" 
+                            t-att-name="'question_%s' % question['id']"
+                            t-att-data-question-id="question['id']"
+                            class="form-control o_wslides_quiz_answer_short"
+                            placeholder="Enter your answer..."
+                            t-att-disabled="True if not slide.channel_id.is_member or slide_completed else ''"
+                            t-att-value="question.get('student_answer', '')" />
+                        <t t-if="slide_completed and question.get('correct_answer_text')">
+                            <div class="mt-2 text-success">
+                                <i class="fa fa-check-circle"/> Correct answer: <strong t-out="question.get('correct_answer_text')"/>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+                
+                <!-- Essay question -->
+                <t t-elif="question.get('question_type') == 'essay'">
+                    <div class="list-group-item">
+                        <textarea 
+                            t-att-name="'question_%s' % question['id']"
+                            t-att-data-question-id="question['id']"
+                            class="form-control o_wslides_quiz_answer_essay"
+                            rows="6"
+                            placeholder="Write your essay answer here..."
+                            t-att-disabled="True if not slide.channel_id.is_member or slide_completed else ''"
+                            t-out="question.get('student_answer', '')"></textarea>
+                        <t t-if="slide_completed">
+                            <div class="mt-2 text-info">
+                                <i class="fa fa-info-circle"/> This answer requires manual grading
+                            </div>
+                        </t>
+                    </div>
+                </t>
+                
+                <!-- Numerical question -->
+                <t t-elif="question.get('question_type') == 'numerical'">
+                    <div class="list-group-item">
+                        <div class="input-group">
+                            <input type="number" 
+                                t-att-name="'question_%s' % question['id']"
+                                t-att-data-question-id="question['id']"
+                                class="form-control o_wslides_quiz_answer_numerical"
+                                placeholder="Enter numerical answer"
+                                step="any"
+                                t-att-disabled="True if not slide.channel_id.is_member or slide_completed else ''"
+                                t-att-value="question.get('student_answer', '')" />
+                            <t t-if="question.get('unit_of_measure')">
+                                <span class="input-group-text" t-out="question.get('unit_of_measure')"/>
+                            </t>
+                        </div>
+                        <t t-if="slide_completed and question.get('correct_answer_numerical')">
+                            <div class="mt-2 text-success">
+                                <i class="fa fa-check-circle"/> Correct answer: <strong t-out="question.get('correct_answer_numerical')"/>
+                                <t t-if="question.get('accepted_error')">
+                                    ± <span t-out="question.get('accepted_error')"/>
+                                </t>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+                
+                <!-- Matching question -->
+                <t t-elif="question.get('question_type') == 'matching'">
+                    <div class="list-group-item">
+                        <p class="text-muted mb-3">Match the items on the left with the items on the right:</p>
+                        <t t-if="question.get('matching_pair_ids')">
+                            <t t-foreach="question.get('matching_pair_ids', [])" t-as="pair">
+                                <div class="row mb-2 align-items-center">
+                                    <div class="col-md-5">
+                                        <span class="fw-bold" t-out="pair.get('prompt')"/>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <i class="fa fa-arrows-h text-muted"/>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <select class="form-select o_wslides_quiz_answer_matching"
+                                            t-att-name="'question_%s_pair_%s' % (question['id'], pair.get('id'))"
+                                            t-att-data-question-id="question['id']"
+                                            t-att-data-pair-id="pair.get('id')"
+                                            t-att-disabled="True if not slide.channel_id.is_member or slide_completed else ''">
+                                            <option value="">-- Select match --</option>
+                                            <t t-foreach="question.get('matching_pair_ids', [])" t-as="option">
+                                                <option t-att-value="option.get('id')" 
+                                                    t-att-selected="slide_completed and option.get('id') == pair.get('correct_match_id')"
+                                                    t-out="option.get('response')"/>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                            </t>
+                        </t>
+                        <t t-if="slide_completed">
+                            <div class="mt-3 alert alert-info">
+                                <i class="fa fa-info-circle"/> Correct matches are shown
+                            </div>
+                        </t>
+                    </div>
+                </t>
+                
+                <!-- Standard single choice (default Odoo behavior) -->
+                <t t-else="">
+                    <t t-foreach="question['answer_ids']" t-as="answer">
+                        <a t-att-data-answer-id="answer['id']" href="#"
+                            t-att-data-text="answer['text_value']" t-att-data-is-correct="answer['is_correct']" t-att-data-comment="answer['comment']"
+                            t-att-class="'o_wslides_quiz_answer list-group-item list-group-item-action d-flex align-items-center %s' % ('list-group-item-success' if slide_completed and answer['is_correct'] else '')">
+                            <label class="my-0 d-flex align-items-center justify-content-center me-2">
+                                <input type="radio"
+                                    t-att-name="question['id']"
+                                    t-att-value="answer['id']"
+                                    class="d-none"
+                                    t-att-disabled="True if not slide.channel_id.is_member or slide_completed else ''"/>
+                                <i t-att-class="'fa fa-circle text-400 %s' % ('d-none' if slide_completed and answer['is_correct'] else '')"/>
+                                <i class="fa fa-times-circle text-danger d-none"></i>
+                                <i t-att-class="'fa fa-check-circle text-success %s' % ('d-none' if not (slide_completed and answer['is_correct']) else '')"></i>
+                            </label>
+                            <span t-out="answer['text_value']"/>
+                        </a>
+                        <t t-if="slide_completed and answer['is_correct']" t-set="correct_answer_comment" t-value="answer['comment']"/>
+                    </t>
+                </t>
+                
+                <!-- Comment section for correct answers (applies to all types with comments) -->
+                <div t-attf-class="o_wslides_quiz_answer_info list-group-item list-group-item-info #{'' if correct_answer_comment else 'd-none'}">
+                    <i class="fa fa-info-circle"/>
+                    <span class="o_wslides_quiz_answer_comment ms-1">
+                        <t t-if="correct_answer_comment" t-out="correct_answer_comment"/>
+                    </span>
+                </div>
+            </div>
+        </xpath>
+        
+    </template>
+    
+    <!-- Add CSS for enhanced question types -->
+    <template id="rto_quiz_assets" name="RTO Quiz Assets">
+        <style>
+            /* Multiple choice multi styles */
+            .o_wslides_quiz_answer_multi input[type="checkbox"]:checked ~ .fa-square-o {
+                display: none !important;
+            }
+            .o_wslides_quiz_answer_multi input[type="checkbox"]:checked ~ .fa-check-square {
+                display: inline-block !important;
+            }
+            
+            /* Text input styles for short answer */
+            .o_wslides_quiz_answer_short {
+                min-width: 300px;
+            }
+            
+            /* Essay textarea styles */
+            .o_wslides_quiz_answer_essay {
+                min-height: 150px;
+                font-family: inherit;
+            }
+            
+            /* Numerical input styles */
+            .o_wslides_quiz_answer_numerical {
+                max-width: 200px;
+            }
+            
+            /* Matching question styles */
+            .o_wslides_quiz_answer_matching {
+                width: 100%;
+            }
+            
+            /* True/False spacing */
+            .o_wslides_quiz_answer_tf {
+                margin-bottom: 0.5rem;
+            }
+            
+            /* Highlight selected multiple choice options */
+            .o_wslides_quiz_answer_multi.selected {
+                background-color: #e3f2fd;
+                border-left: 3px solid #2196f3;
+            }
+        </style>
+    </template>
+    
+</odoo>

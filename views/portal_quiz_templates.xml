@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================== -->
+    <!-- Quiz Start Page                                                -->
+    <!-- ============================================================== -->
+    <template id="quiz_start" name="LMS Quiz Start">
+        <t t-call="website.layout">
+            <t t-set="title">Quiz · <t t-out="quiz.name"/></t>
+            <t t-set="head">
+                <style>
+                    :root {
+                        --quiz-ink: #0f172a;
+                        --quiz-muted: #6b7280;
+                        --quiz-accent: #ff6b35;
+                        --quiz-accent-dark: #d9480f;
+                        --quiz-slate: #f5f5f4;
+                        --quiz-card: #ffffff;
+                        --quiz-font: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+                    }
+                    .o_quiz_wrap {
+                        background: linear-gradient(135deg, #fdf2f8 0%, #eef2ff 60%, #f0fdfa 100%);
+                        min-height: 100vh;
+                        font-family: var(--quiz-font);
+                        color: var(--quiz-ink);
+                        padding: 3rem 0;
+                    }
+                    .quiz-card {
+                        background: var(--quiz-card);
+                        border-radius: 1.5rem;
+                        box-shadow: 0 25px 70px rgba(15, 23, 42, 0.08);
+                        padding: 2.5rem;
+                    }
+                    .quiz-pill {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                        padding: 0.35rem 0.9rem;
+                        border-radius: 999px;
+                        font-size: 0.85rem;
+                        background: rgba(15, 23, 42, 0.05);
+                    }
+                    .quiz-metric {
+                        border-radius: 1.25rem;
+                        padding: 1.25rem;
+                        background: var(--quiz-slate);
+                        text-transform: uppercase;
+                        font-size: 0.75rem;
+                        letter-spacing: 0.08em;
+                    }
+                    .quiz-metric strong {
+                        display: block;
+                        font-size: 1.7rem;
+                        letter-spacing: 0;
+                        margin-top: 0.35rem;
+                    }
+                    .quiz-history table {
+                        font-size: 0.9rem;
+                    }
+                    .quiz-btn {
+                        border: none;
+                        border-radius: 999px;
+                        padding: 0.9rem 2.75rem;
+                        font-weight: 600;
+                        background: var(--quiz-accent);
+                        color: #fff;
+                        transition: transform 0.2s ease, box-shadow 0.2s ease;
+                    }
+                    .quiz-btn:hover {
+                        background: var(--quiz-accent-dark);
+                        transform: translateY(-2px);
+                        box-shadow: 0 12px 30px rgba(217, 72, 15, 0.35);
+                    }
+                    .quiz-alert {
+                        border-radius: 1rem;
+                        padding: 1rem 1.25rem;
+                        background: rgba(217, 72, 15, 0.08);
+                        color: var(--quiz-accent-dark);
+                    }
+                </style>
+            </t>
+            <div id="wrap" class="o_quiz_wrap">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-12 col-lg-10">
+                            <div class="quiz-card">
+                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+                                    <div>
+                                        <span class="quiz-pill">Course · <t t-out="course.name"/></span>
+                                        <h1 class="display-5 fw-bold mt-2 mb-0"><t t-out="quiz.name"/></h1>
+                                    </div>
+                                    <div class="text-lg-end">
+                                        <div class="quiz-pill">Pass mark · <t t-out="quiz.pass_mark"/>%</div>
+                                        <div class="quiz-pill mt-2">Questions · <t t-out="quiz.question_count"/></div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <div class="quiz-metric">
+                                            Attempts allowed
+                                            <strong>
+                                                <t t-if="attempt_limit">
+                                                    <t t-out="attempts_remaining"/> / <t t-out="attempt_limit"/>
+                                                </t>
+                                                <t t-else="">Unlimited</t>
+                                            </strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="quiz-metric">
+                                            Status
+                                            <strong>
+                                                <t t-if="active_attempt">In progress</t>
+                                                <t t-elif="attempt_limit and attempts_remaining==0">Locked</t>
+                                                <t t-else="">Ready</t>
+                                            </strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="quiz-metric">
+                                            Course
+                                            <strong><t t-out="course.name"/></strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <t t-if="error">
+                                    <div class="quiz-alert mb-4">
+                                        <strong>Heads up:</strong> <t t-out="error"/>
+                                    </div>
+                                </t>
+
+                                <div class="d-flex flex-column flex-md-row gap-3 mb-5">
+                                    <t t-if="active_attempt">
+                                        <form method="post" class="flex-grow-1">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="action" value="resume"/>
+                                            <p class="text-muted mb-2">You have an attempt in progress from <t t-out="active_attempt.started_at" t-options="{'widget': 'datetime'}"/>.</p>
+                                            <button class="quiz-btn w-100" type="submit">Resume attempt</button>
+                                        </form>
+                                    </t>
+                                    <form method="post" class="flex-grow-1">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <input type="hidden" name="action" value="start"/>
+                                        <button class="quiz-btn w-100" type="submit" t-att-disabled="'disabled' if attempt_limit and attempts_remaining == 0 else False">
+                                            Start new attempt
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div class="quiz-history">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h2 class="h5 mb-0">Recent attempts</h2>
+                                        <span class="text-muted" t-if="attempt_history">Last <t t-out="len(attempt_history)"/> records</span>
+                                    </div>
+                                    <t t-if="attempt_history">
+                                        <div class="table-responsive">
+                                            <table class="table align-middle mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Attempt</th>
+                                                        <th>Date</th>
+                                                        <th>Score</th>
+                                                        <th>Outcome</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <t t-foreach="attempt_history" t-as="attempt_line">
+                                                        <tr>
+                                                            <td><t t-out="attempt_line.reference"/></td>
+                                                            <td>
+                                                                <t t-out="attempt_line.graded_at or attempt_line.submitted_at" t-options="{'widget': 'datetime'}"/>
+                                                            </td>
+                                                            <td>
+                                                                <t t-out="round(attempt_line.score_percentage, 1)"/>%
+                                                                <span class="text-muted">(<t t-out="attempt_line.total_score"/> / <t t-out="attempt_line.max_score"/>)</span>
+                                                            </td>
+                                                            <td>
+                                                                <span t-if="attempt_line.passed" class="badge bg-success">Passed</span>
+                                                                <span t-else="" class="badge bg-danger">Not yet competent</span>
+                                                            </td>
+                                                        </tr>
+                                                    </t>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </t>
+                                    <t t-else="">
+                                        <p class="text-muted mb-0">No attempts have been graded yet.</p>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================================== -->
+    <!-- Quiz Attempt Page                                             -->
+    <!-- ============================================================== -->
+    <template id="quiz_attempt" name="LMS Quiz Attempt">
+        <t t-call="website.layout">
+            <t t-set="title">Attempt · <t t-out="quiz.name"/></t>
+            <t t-set="head">
+                <style>
+                    .quiz-runtime {
+                        background: #010314;
+                        min-height: 100vh;
+                        font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+                        padding: 2.5rem 0;
+                        color: #f8fafc;
+                    }
+                    .quiz-runtime .container {
+                        max-width: 1100px;
+                    }
+                    .question-nav {
+                        display: flex;
+                        gap: 0.5rem;
+                        flex-wrap: wrap;
+                    }
+                    .question-pill {
+                        width: 42px;
+                        height: 42px;
+                        border-radius: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: 600;
+                        border: 1px solid rgba(255,255,255,0.2);
+                        color: rgba(255,255,255,0.7);
+                        text-decoration: none;
+                    }
+                    .question-pill.active {
+                        background: #f97316;
+                        border-color: #f97316;
+                        color: #0f172a;
+                    }
+                    .question-pill.locked {
+                        opacity: 0.35;
+                        pointer-events: none;
+                    }
+                    .quiz-panel {
+                        background: rgba(15, 23, 42, 0.85);
+                        border-radius: 1.75rem;
+                        padding: 2rem;
+                        box-shadow: 0 35px 60px rgba(0,0,0,0.35);
+                    }
+                    .quiz-panel h2 {
+                        font-weight: 700;
+                    }
+                    .quiz-option {
+                        border: 1px solid rgba(255, 255, 255, 0.15);
+                        border-radius: 1rem;
+                        padding: 1rem 1.25rem;
+                        margin-bottom: 1rem;
+                        display: flex;
+                        gap: 0.75rem;
+                        align-items: center;
+                        cursor: pointer;
+                    }
+                    .quiz-submit-btn {
+                        border-radius: 999px;
+                        border: none;
+                        padding: 0.85rem 2.75rem;
+                        font-weight: 600;
+                        background: linear-gradient(90deg, #22d3ee, #2563eb);
+                        color: #fff;
+                    }
+                    .quiz-alert-inline {
+                        border-radius: 1rem;
+                        padding: 0.85rem 1.25rem;
+                        background: rgba(248, 113, 113, 0.15);
+                        border: 1px solid rgba(248, 113, 113, 0.4);
+                        color: #fecaca;
+                        margin-bottom: 1rem;
+                    }
+                </style>
+            </t>
+            <div id="wrap" class="quiz-runtime">
+                <div class="container">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between flex-column flex-md-row gap-3">
+                            <div>
+                                <span class="text-uppercase text-white-50 small">Attempt</span>
+                                <h1 class="display-6 fw-bold mb-0"><t t-out="quiz.name"/></h1>
+                            </div>
+                            <div class="text-md-end">
+                                <div class="text-muted">Progress</div>
+                                <div class="fs-3 fw-semibold">
+                                    <t t-out="progress['answered']"/> / <t t-out="progress['total']"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <t t-if="error">
+                        <div class="quiz-alert-inline">
+                            <strong>Validation error:</strong> <t t-out="error"/>
+                        </div>
+                    </t>
+
+                    <div class="question-nav mb-4">
+                        <t t-foreach="nav_items" t-as="nav">
+                            <a t-att-href="nav['is_unlocked'] and '/lms/quiz/%s/attempt?sequence=%s' % (quiz.id, nav['sequence']) or '#'"
+                               t-att-class="'question-pill %s %s' % ('active' if nav['is_active'] else '', 'locked' if not nav['is_unlocked'] else '')">
+                                <t t-out="nav['sequence']"/>
+                            </a>
+                        </t>
+                    </div>
+
+                    <div class="quiz-panel" t-if="current_question">
+                        <h2 class="h4 mb-3">Question <t t-out="current_question['sequence']"/></h2>
+                        <div class="mb-4" t-raw="current_question['question_html']"/>
+
+                        <t t-if="current_question['is_unlocked']">
+                            <form method="post" class="mb-3">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="question_id" t-att-value="current_question['question_id']"/>
+                                <input type="hidden" name="sequence" t-att-value="current_question['sequence']"/>
+
+                                <t t-if="current_question['question_type'] in ('mcq', 'tf')">
+                                    <t t-foreach="current_question['options']" t-as="option">
+                                        <label class="quiz-option">
+                                            <input type="radio" class="form-check-input mt-0" name="selected_answer_id"
+                                                   t-att-value="option['id']"
+                                                   t-att-checked="'checked' if current_question['selected_answer_id'] == option['id'] else False"/>
+                                            <div class="flex-grow-1" t-raw="option['answer_html']"/>
+                                        </label>
+                                    </t>
+                                </t>
+                                <t t-else="">
+                                    <textarea name="answer_text" class="form-control" rows="5"><t t-out="current_question['answer_text_plain'] or ''"/></textarea>
+                                </t>
+
+                                <div class="d-flex gap-3 mt-4">
+                                    <button class="quiz-submit-btn" type="submit" name="action" value="save">Save response</button>
+                                    <button class="btn btn-outline-light px-4" type="submit" name="action" value="submit"
+                                            t-att-disabled="'disabled' if not can_submit else False">Submit attempt</button>
+                                </div>
+                            </form>
+                        </t>
+                        <t t-else="">
+                            <div class="quiz-alert-inline">
+                                This question unlocks once dependency conditions are met.<br/>
+                                <span class="text-warning"><t t-out="current_question['status_message']"/></span>
+                            </div>
+                        </t>
+                    </div>
+
+                    <t t-if="not current_question">
+                        <div class="quiz-panel text-center">
+                            <p class="lead mb-4">All available questions are locked by dependencies. Answer earlier questions to continue.</p>
+                            <a class="quiz-submit-btn" t-att-href="'/lms/quiz/%s/start' % quiz.id">Return to start</a>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================================== -->
+    <!-- Quiz Result Page                                              -->
+    <!-- ============================================================== -->
+    <template id="quiz_result" name="LMS Quiz Result">
+        <t t-call="website.layout">
+            <t t-set="title">Result · <t t-out="quiz.name"/></t>
+            <t t-set="head">
+                <style>
+                    .quiz-result-wrap {
+                        background: linear-gradient(160deg, #111827 0%, #581c87 35%, #1e1b4b 100%);
+                        min-height: 100vh;
+                        color: #f8fafc;
+                        padding: 3rem 0;
+                        font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+                    }
+                    .quiz-score-card {
+                        border-radius: 1.75rem;
+                        padding: 2.5rem;
+                        background: rgba(15, 23, 42, 0.85);
+                        box-shadow: 0 40px 60px rgba(2, 6, 23, 0.6);
+                    }
+                    .quiz-score-value {
+                        font-size: 4rem;
+                        font-weight: 800;
+                        line-height: 1;
+                    }
+                    .quiz-summary-table {
+                        background: rgba(15, 23, 42, 0.9);
+                        border-radius: 1.5rem;
+                        padding: 1.5rem;
+                        margin-top: 2rem;
+                    }
+                    .quiz-summary-table table {
+                        color: inherit;
+                    }
+                </style>
+            </t>
+            <div id="wrap" class="quiz-result-wrap">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-12 col-lg-8">
+                            <div class="quiz-score-card">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+                                    <div>
+                                        <p class="text-uppercase text-sm text-white-50 mb-1">Attempt reference</p>
+                                        <h1 class="h2 mb-0"><t t-out="attempt.reference"/></h1>
+                                        <p class="text-muted mb-0">Completed <t t-out="attempt.graded_at or attempt.submitted_at" t-options="{'widget': 'datetime'}"/></p>
+                                    </div>
+                                    <div class="text-md-end">
+                                        <div class="quiz-score-value"><t t-out="round(attempt.score_percentage, 1)"/>%</div>
+                                        <span class="badge fs-6 mt-2" t-att-class="attempt.passed and 'bg-success' or 'bg-warning text-dark'">
+                                            <t t-if="attempt.passed">Competent</t>
+                                            <t t-elif="manual_pending">Awaiting grading</t>
+                                            <t t-else="">Not yet competent</t>
+                                        </span>
+                                    </div>
+                                </div>
+                                <t t-if="manual_pending">
+                                    <div class="quiz-alert-inline mt-4">
+                                        Trainer review pending for short answers. Final competency will update after grading.
+                                    </div>
+                                </t>
+                                <div class="d-flex flex-column flex-md-row gap-3 mt-4">
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted">Score</div>
+                                        <strong><t t-out="attempt.total_score"/> / <t t-out="attempt.max_score"/></strong>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted">Attempts remaining</div>
+                                        <strong>
+                                            <t t-if="attempts_remaining is not None"><t t-out="attempts_remaining"/></t>
+                                            <t t-else="">Unlimited</t>
+                                        </strong>
+                                    </div>
+                                    <div class="text-md-end">
+                                        <a t-if="can_retry" class="quiz-submit-btn" t-att-href="'/lms/quiz/%s/start' % quiz.id">Retake quiz</a>
+                                        <a t-else="" class="btn btn-outline-light" t-att-href="'/lms/quiz/%s/start' % quiz.id">Back to quiz</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="quiz-summary-table">
+                                <h2 class="h5 mb-3">Question breakdown</h2>
+                                <div class="table-responsive">
+                                    <table class="table align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Question</th>
+                                                <th>Response</th>
+                                                <th>Score</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="answer_rows" t-as="row">
+                                                <tr>
+                                                    <td><t t-out="row['sequence']"/></td>
+                                                    <td><t t-out="row['title']"/></td>
+                                                    <td t-raw="row['response'] or '&lt;span class=&quot;text-muted&quot;&gt;No response&lt;/span&gt;'"/>
+                                                    <td>
+                                                        <strong><t t-out="row['total_score']"/></strong>
+                                                        <span class="text-muted">(<t t-out="row['auto_score']"/> + <t t-out="row['manual_score']"/>)</span>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================================== -->
+    <!-- Access Denied                                                 -->
+    <!-- ============================================================== -->
+    <template id="quiz_access_denied" name="Quiz Access Denied">
+        <t t-call="website.layout">
+            <div id="wrap" class="o_quiz_wrap">
+                <div class="container py-5">
+                    <div class="row">
+                        <div class="col-lg-6 offset-lg-3">
+                            <div class="quiz-card text-center">
+                                <h2 class="mb-3">Enrollment required</h2>
+                                <p class="text-muted">You must be enrolled in <strong><t t-out="course.name"/></strong> to take this quiz.</p>
+                                <a class="quiz-btn" t-att-href="'/slides/%s' % course.id">Return to course</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

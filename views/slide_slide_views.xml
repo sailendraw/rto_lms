@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ====================================================================
+         Slide (Activity) - RTO Extension Views
+         ==================================================================== -->
+
+    <!-- Form View Extension -->
+    <record id="view_slide_slide_form_rto" model="ir.ui.view">
+        <field name="name">slide.slide.form.rto</field>
+        <field name="model">slide.slide</field>
+        <field name="inherit_id" ref="website_slides.view_slide_slide_form"/>
+        <field name="arch" type="xml">
+            <!-- Add RTO Activity Type before content -->
+            <xpath expr="//field[@name='slide_category']" position="after">
+                <field name="rto_activity_type" invisible="not channel_id.is_rto_course"
+                       required="channel_id.is_rto_course"/>
+                <field name="quiz_definition_id" invisible="slide_category != 'quiz'" 
+                       domain="[('course_id', '=', channel_id)]"/>
+                <button name="action_sync_quiz_questions" type="object" 
+                        string="Sync Questions from Bank" 
+                        class="oe_highlight"
+                        invisible="slide_category != 'quiz' or not quiz_definition_id"
+                        help="Import questions from the selected quiz definition into this quiz"/>
+            </xpath>
+
+            <!-- Add RTO Notebook Page -->
+            <xpath expr="//notebook" position="inside">
+                <page string="RTO Assessment" name="rto_assessment"
+                      invisible="not channel_id.is_rto_course or rto_activity_type == 'learning'">
+                    <group>
+                        <group string="Assessment Details">
+                            <field name="assessment_method"/>
+                            <field name="is_critical"/>
+                            <field name="weighting"/>
+                            <field name="time_limit_minutes"/>
+                            <field name="max_attempts"/>
+                            <field name="attempt_gap_days"/>
+                        </group>
+                        <group string="Evidence Requirements">
+                            <field name="evidence_required"/>
+                            <field name="min_evidence_count" invisible="not evidence_required"/>
+                            <field name="allowed_file_types" invisible="not evidence_required"/>
+                            <field name="max_file_size_mb" invisible="not evidence_required"/>
+                            <field name="evidence_description" invisible="not evidence_required"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Third Party">
+                            <field name="requires_third_party"/>
+                            <field name="third_party_type" invisible="not requires_third_party"/>
+                        </group>
+                        <group string="Statistics">
+                            <field name="outcome_count"/>
+                            <field name="evidence_log_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Assessment Instructions">
+                            <field name="assessment_instructions" placeholder="Enter instructions for students..."/>
+                        </page>
+                        <page string="Marking Guide" groups="website_slides.group_website_slides_officer">
+                            <field name="marking_guide" placeholder="Internal marking criteria..."/>
+                        </page>
+                        <page string="Assessment Conditions">
+                            <field name="assessment_conditions" placeholder="Conditions for conducting this assessment..."/>
+                            <field name="reasonable_adjustments" placeholder="Available reasonable adjustments..."/>
+                        </page>
+                    </notebook>
+                </page>
+
+                <page string="Performance Criteria" name="rto_criteria"
+                      invisible="not channel_id.is_rto_course or rto_activity_type == 'learning'">
+                    <group string="Unit Elements Addressed">
+                        <field name="performance_criteria" placeholder="e.g., PC1.1, PC1.2, PC2.3"/>
+                        <field name="knowledge_evidence" placeholder="Knowledge evidence from unit..."/>
+                        <field name="performance_evidence" placeholder="Performance evidence from unit..."/>
+                    </group>
+                </page>
+
+            </xpath>
+
+            <!-- Add smart buttons for outcomes and evidence -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_outcomes" type="object"
+                        class="oe_stat_button" icon="fa-check-square-o"
+                        invisible="not is_rto_assessable">
+                    <field name="outcome_count" widget="statinfo" string="Outcomes"/>
+                </button>
+                <button name="action_view_evidence" type="object"
+                        class="oe_stat_button" icon="fa-file-text-o"
+                        invisible="not evidence_required">
+                    <field name="evidence_log_count" widget="statinfo" string="Evidence"/>
+                </button>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Tree View Extension -->
+    <record id="view_slide_slide_tree_rto" model="ir.ui.view">
+        <field name="name">slide.slide.tree.rto</field>
+        <field name="model">slide.slide</field>
+        <field name="inherit_id" ref="website_slides.view_slide_slide_tree"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="rto_activity_type" optional="show"/>
+                <field name="is_critical" optional="hide"/>
+                <field name="weighting" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Search View Extension -->
+    <record id="view_slide_slide_search_rto" model="ir.ui.view">
+        <field name="name">slide.slide.search.rto</field>
+        <field name="model">slide.slide</field>
+        <field name="inherit_id" ref="website_slides.view_slide_slide_search"/>
+        <field name="arch" type="xml">
+            <!-- Add RTO filters after Archived filter -->
+            <filter name="inactive" position="after">
+                <separator/>
+                <filter string="Assessments" name="assessments" domain="[('rto_activity_type', '=', 'assessment')]"/>
+                <filter string="Observations" name="observations" domain="[('rto_activity_type', '=', 'observation')]"/>
+                <filter string="Evidence Uploads" name="evidence" domain="[('rto_activity_type', '=', 'evidence')]"/>
+                <filter string="Critical" name="critical" domain="[('is_critical', '=', True)]"/>
+            </filter>
+            <!-- Add RTO groupby filters inside the existing group -->
+            <filter name="groupby_type" position="after">
+                <filter string="Activity Type" name="group_activity_type" context="{'group_by': 'rto_activity_type'}"/>
+                <filter string="Assessment Method" name="group_assessment_method" context="{'group_by': 'assessment_method'}"/>
+            </filter>
+        </field>
+    </record>
+
+</odoo>

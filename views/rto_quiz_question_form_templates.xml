@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+    TODO: Re-enable after verifying the parent template structure in website_slides
+
+    Replace the "Add Question" button with a dropdown menu for question types
+    <template id="rto_lesson_content_quiz_add_buttons" inherit_id="website_slides.lesson_content_quiz_add_buttons" name="RTO Quiz Add Question Dropdown">
+
+        Replace the single "Add Question" button with a dropdown
+        <xpath expr="//a[hasclass('o_wslides_js_quiz_add_question')]" position="replace">
+            <div class="btn-group ms-3">
+                <button type="button" class="btn btn-light border dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-plus me-2"/>
+                    <span>Add Question</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item o_wslides_js_quiz_add o_wslides_js_quiz_add_question" href="#" data-question-type="multiple_choice_single">
+                        <i class="fa fa-dot-circle-o me-2"/>Multiple Choice (Single)
+                    </a></li>
+                    <li><a class="dropdown-item o_wslides_js_quiz_add o_wslides_js_quiz_add_question" href="#" data-question-type="multiple_choice_multi">
+                        <i class="fa fa-check-square-o me-2"/>Multiple Choice (Multi)
+                    </a></li>
+                    <li><a class="dropdown-item o_wslides_js_quiz_add o_wslides_js_quiz_add_question" href="#" data-question-type="true_false">
+                        <i class="fa fa-toggle-on me-2"/>True/False
+                    </a></li>
+                    <li><a class="dropdown-item o_wslides_js_quiz_add o_wslides_js_quiz_add_question" href="#" data-question-type="short_answer">
+                        <i class="fa fa-font me-2"/>Short Answer
+                    </a></li>
+                    <li><a class="dropdown-item o_wslides_js_quiz_add o_wslides_js_quiz_add_question" href="#" data-question-type="essay">
+                        <i class="fa fa-file-text-o me-2"/>Essay
+                    </a></li>
+                    <li><a class="dropdown-item o_wslides_js_quiz_add o_wslides_js_quiz_add_question" href="#" data-question-type="numerical">
+                        <i class="fa fa-calculator me-2"/>Numerical
+                    </a></li>
+                    <li><a class="dropdown-item o_wslides_js_quiz_add o_wslides_js_quiz_add_question" href="#" data-question-type="matching">
+                        <i class="fa fa-exchange me-2"/>Matching
+                    </a></li>
+                </ul>
+            </div>
+        </xpath>
+
+    </template>
+    -->
+</odoo>

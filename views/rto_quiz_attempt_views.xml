@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Quiz Attempt List View -->
+    <record id="view_rto_quiz_attempt_tree" model="ir.ui.view">
+        <field name="name">rto.quiz.attempt.list</field>
+        <field name="model">rto.quiz.attempt</field>
+        <field name="arch" type="xml">
+            <list string="Quiz Attempts" decoration-success="state=='completed' and passed" decoration-danger="state=='completed' and not passed">
+                <field name="reference"/>
+                <field name="student_id"/>
+                <field name="activity_id"/>
+                <field name="course_id"/>
+                <field name="attempt_number"/>
+                <field name="state" widget="badge" 
+                    decoration-info="state=='draft'"
+                    decoration-warning="state in ('in_progress', 'submitted')"
+                    decoration-success="state=='completed'"/>
+                <field name="grading_status" widget="badge"/>
+                <field name="started_at"/>
+                <field name="submitted_at"/>
+                <field name="time_taken_display"/>
+                <field name="final_score"/>
+                <field name="max_score"/>
+                <field name="score_percentage" widget="progressbar"/>
+                <field name="passed" widget="boolean"/>
+                <field name="requires_manual_grading" invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Quiz Attempt Form View -->
+    <record id="view_rto_quiz_attempt_form" model="ir.ui.view">
+        <field name="name">rto.quiz.attempt.form</field>
+        <field name="model">rto.quiz.attempt</field>
+        <field name="arch" type="xml">
+            <form string="Quiz Attempt">
+                <header>
+                    <button name="action_start_attempt" string="Start Quiz" type="object" 
+                        invisible="state != 'draft'" class="oe_highlight"/>
+                    <button name="action_submit_attempt" string="Submit" type="object" 
+                        invisible="state != 'in_progress'" class="oe_highlight"/>
+                    <button name="action_manual_grade" string="Manual Grading" type="object" 
+                        invisible="not requires_manual_grading or grading_status == 'fully_graded'" 
+                        class="oe_highlight"/>
+                    <button name="action_complete_grading" string="Complete Grading" type="object" 
+                        invisible="grading_status != 'fully_graded' or state == 'completed'" 
+                        class="oe_highlight"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,submitted,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_manual_grade" type="object" class="oe_stat_button" icon="fa-pencil"
+                            invisible="not requires_manual_grading">
+                            <field name="response_count" widget="statinfo" string="Responses"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="reference"/>
+                        <h1><field name="reference" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="activity_id"/>
+                            <field name="course_id"/>
+                            <field name="student_id"/>
+                            <field name="attempt_number"/>
+                        </group>
+                        <group>
+                            <field name="started_at"/>
+                            <field name="submitted_at"/>
+                            <field name="time_taken_display"/>
+                            <field name="grading_status" widget="badge"/>
+                            <field name="requires_manual_grading"/>
+                        </group>
+                    </group>
+                    <group string="Scoring">
+                        <group>
+                            <field name="auto_score"/>
+                            <field name="manual_score"/>
+                            <field name="final_score"/>
+                        </group>
+                        <group>
+                            <field name="max_score"/>
+                            <field name="score_percentage" widget="percentpie"/>
+                            <field name="passed" widget="boolean"/>
+                        </group>
+                    </group>
+                    <group string="Statistics">
+                        <group>
+                            <field name="question_count"/>
+                            <field name="questions_answered"/>
+                        </group>
+                        <group>
+                            <field name="questions_correct"/>
+                        </group>
+                    </group>
+                    <group string="Integration" invisible="not evidence_log_id and not outcome_id">
+                        <field name="evidence_log_id"/>
+                        <field name="outcome_id"/>
+                    </group>
+                    <group string="Feedback" invisible="state not in ('completed', 'manually_graded')">
+                        <field name="grader_feedback" nolabel="1" placeholder="Overall feedback for student..."/>
+                        <group>
+                            <field name="graded_by_id"/>
+                            <field name="graded_at"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Responses" name="responses">
+                            <field name="response_ids">
+                                <list editable="bottom" decoration-success="is_correct" decoration-danger="not is_correct">
+                                    <field name="question_id"/>
+                                    <field name="question_type"/>
+                                    <field name="answer_ids" widget="many2many_tags"/>
+                                    <field name="response_text"/>
+                                    <field name="response_number"/>
+                                    <field name="question_points"/>
+                                    <field name="points_earned"/>
+                                    <field name="is_correct" widget="boolean"/>
+                                    <field name="grader_feedback"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Audit Trail" name="audit">
+                            <group>
+                                <field name="ip_address"/>
+                                <field name="user_agent"/>
+                            </group>
+                            <group string="Response Data (JSON)">
+                                <field name="response_data" nolabel="1" widget="text"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Quiz Attempt Action -->
+    <record id="action_rto_quiz_attempt" model="ir.actions.act_window">
+        <field name="name">Quiz Attempts</field>
+        <field name="res_model">rto.quiz.attempt</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No quiz attempts yet
+            </p>
+            <p>
+                Quiz attempts will appear here when students take quizzes.
+            </p>
+        </field>
+    </record>
+
+    <!-- Manual Grading Queue Action -->
+    <record id="action_rto_quiz_manual_grading" model="ir.actions.act_window">
+        <field name="name">Manual Grading Queue</field>
+        <field name="res_model">rto.quiz.attempt</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('requires_manual_grading', '=', True), ('grading_status', 'in', ['pending', 'auto_graded', 'partially_graded'])]</field>
+        <field name="context">{'search_default_group_by_activity': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No quizzes pending manual grading
+            </p>
+            <p>
+                Quiz attempts requiring manual grading (essays, short answers) will appear here.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================ -->
+    <!-- Question Bank Views                                             -->
+    <!-- ================================================================ -->
+    
+    <!-- Answer Options Tree (for inline use in question form) -->
+    <record id="view_lms_quiz_question_answer_tree" model="ir.ui.view">
+        <field name="name">lms.quiz.question.answer.tree</field>
+        <field name="model">lms.quiz.question.answer</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" string="Answers">
+                <field name="sequence" widget="handle"/>
+                <field name="answer_html" widget="html"/>
+                <field name="is_correct" widget="boolean_toggle"/>
+                <field name="score"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Matching Pairs Tree (for inline use in question form) -->
+    <record id="view_lms_quiz_question_matching_pair_tree" model="ir.ui.view">
+        <field name="name">lms.quiz.question.matching.pair.tree</field>
+        <field name="model">lms.quiz.question.matching.pair</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" string="Matching Pairs">
+                <field name="sequence" widget="handle"/>
+                <field name="question_id" column_invisible="1"/>
+                <field name="prompt" widget="html"/>
+                <field name="response" widget="html"/>
+                <field name="correct_match_id" required="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lms_quiz_question_tree" model="ir.ui.view">
+        <field name="name">lms.quiz.question.tree</field>
+        <field name="model">lms.quiz.question</field>
+        <field name="arch" type="xml">
+            <list string="Quiz Questions">
+                <field name="name"/>
+                <field name="course_id"/>
+                <field name="question_type" widget="badge"/>
+                <field name="max_score"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lms_quiz_question_form" model="ir.ui.view">
+        <field name="name">lms.quiz.question.form</field>
+        <field name="model">lms.quiz.question</field>
+        <field name="arch" type="xml">
+            <form string="Quiz Question">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Enter a descriptive question title..." required="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="course_id"/>
+                            <field name="question_type" widget="radio" options="{'horizontal': true}" required="1"/>
+                            <field name="max_score" required="1"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="allow_partial_credit" invisible="question_type != 'mcq_multi'"/>
+                            <field name="definition_ids" widget="many2many_tags"/>
+                            <field name="is_manual_grading" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Question Text">
+                        <field name="question_html" widget="html" nolabel="1" placeholder="Enter the question text here..." required="1"/>
+                    </group>
+                    <notebook>
+                        <!-- MCQ Single/Multi/TF Answer Options -->
+                        <page string="Answer Options"
+                              invisible="question_type not in ['mcq_single', 'mcq_multi', 'tf']"
+                              name="answers">
+                            <field name="answer_ids" context="{'default_question_id': id, 'parent_question_type': question_type, 'tree_view_ref': 'rto_lms.view_lms_quiz_question_answer_tree'}"/>
+                        </page>
+
+                        <!-- Short Answer / Essay Expected Answer -->
+                        <page string="Expected Answer"
+                              invisible="question_type not in ['short', 'essay']"
+                              name="text_answer">
+                            <div class="alert alert-warning" role="alert" invisible="question_type != 'short'">
+                                <i class="fa fa-exclamation-triangle me-2"/>
+                                <strong>Required:</strong> You must define an Expected Answer. Student responses will be validated against this answer.
+                            </div>
+                            <group>
+                                <field name="expected_answer_text" 
+                                       widget="text" 
+                                       nolabel="1" 
+                                       required="question_type == 'short'"
+                                       placeholder="Enter the exact answer students should provide (case sensitivity optional below)..."/>
+                            </group>
+                            <group>
+                                <field name="case_sensitive" invisible="question_type != 'short'"/>
+                            </group>
+                        </page>
+
+                        <!-- Numerical Answer Configuration -->
+                        <page string="Numerical Answer"
+                              invisible="question_type != 'numerical'"
+                              name="numerical">
+                            <div class="alert alert-warning" role="alert">
+                                <i class="fa fa-exclamation-triangle me-2"/>
+                                <strong>Required:</strong> You must define the Expected Answer (numerical value). Student responses will be validated against this number.
+                            </div>
+                            <group>
+                                <field name="expected_answer_text" 
+                                       string="Expected Answer (Number)" 
+                                       required="question_type == 'numerical'"
+                                       placeholder="Enter the correct numerical answer (e.g., 4, 3.14, 100)"/>
+                                <field name="numerical_tolerance"/>
+                                <field name="numerical_unit" placeholder="e.g., kg, m/s, °C"/>
+                            </group>
+                        </page>
+
+                        <!-- Matching Pairs Configuration -->
+                        <page string="Matching Pairs"
+                              invisible="question_type != 'matching'"
+                              name="matching">
+                            <field name="matching_pair_ids" context="{'tree_view_ref': 'rto_lms.view_lms_quiz_question_matching_pair_tree'}"/>
+                            <group>
+                                <p class="text-muted">
+                                    Create prompts (left column) and responses (right column),
+                                    then select which response correctly matches each prompt.
+                                </p>
+                            </group>
+                        </page>
+
+                        <!-- Question Dependencies -->
+                        <page string="Dependencies" name="dependencies">
+                            <group>
+                                <field name="depends_on_question_id" domain="[('course_id', '=', course_id)]"/>
+                                <field name="dependency_type" invisible="not depends_on_question_id"/>
+                                <field name="depends_on_answer_ids"
+                                       domain="[('question_id', '=', depends_on_question_id)]"
+                                       invisible="dependency_type != 'answer_value'"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="action_lms_quiz_question" model="ir.actions.act_window">
+        <field name="name">Question Bank</field>
+        <field name="res_model">lms.quiz.question</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- ================================================================ -->
+    <!-- Question Type Selector Dialog                                    -->
+    <!-- ================================================================ -->
+
+    <!-- Type Selector Form View -->
+    <record id="view_lms_quiz_question_type_selector_form" model="ir.ui.view">
+        <field name="name">lms.quiz.question.type.selector</field>
+        <field name="model">lms.quiz.question</field>
+        <field name="priority">1000</field>
+        <field name="arch" type="xml">
+            <form string="Select Question Type">
+                <group>
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-0">
+                            <i class="fa fa-info-circle me-2"/>
+                            Choose the type of question you want to create:
+                        </p>
+                    </div>
+                </group>
+                <group>
+                    <field name="question_type"
+                           widget="radio"
+                           options="{'horizontal': false}"
+                           required="1"/>
+                </group>
+                <footer>
+                    <button string="Next"
+                            type="object"
+                            name="action_open_question_form"
+                            class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Type Selector Action -->
+    <record id="action_lms_question_type_selector" model="ir.actions.act_window">
+        <field name="name">Create Question</field>
+        <field name="res_model">lms.quiz.question</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_lms_quiz_question_type_selector_form"/>
+        <field name="target">new</field>
+        <field name="context">{
+            'form_view_ref': 'rto_lms.view_lms_quiz_question_type_selector_form',
+        }</field>
+    </record>
+
+    <!-- ================================================================ -->
+    <!-- Quiz Definition Views                                            -->
+    <!-- ================================================================ -->
+    <record id="view_lms_quiz_definition_tree" model="ir.ui.view">
+        <field name="name">lms.quiz.definition.tree</field>
+        <field name="model">lms.quiz.definition</field>
+        <field name="arch" type="xml">
+            <list string="Quiz Definitions">
+                <field name="name"/>
+                <field name="slide_id"/>
+                <field name="course_id"/>
+                <field name="question_count"/>
+                <field name="question_limit"/>
+                <field name="randomize" widget="boolean_toggle"/>
+                <field name="pass_mark"/>
+                <field name="max_attempts"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lms_quiz_definition_form" model="ir.ui.view">
+        <field name="name">lms.quiz.definition.form</field>
+        <field name="model">lms.quiz.definition</field>
+        <field name="arch" type="xml">
+            <form string="Quiz Definition">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="slide_id"/>
+                            <field name="course_id" readonly="1"/>
+                            <field name="question_count" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="question_limit"/>
+                            <field name="randomize"/>
+                            <field name="pass_mark"/>
+                            <field name="max_attempts"/>
+                        </group>
+                    </group>
+                    <group string="Question Pool">
+                        <div class="o_row">
+                            <button name="%(action_lms_question_type_selector)d"
+                                    type="action"
+                                    string="Add Question"
+                                    class="btn-primary oe_link"
+                                    context="{'default_course_id': course_id}"
+                                    icon="fa-plus"/>
+                            <span class="text-muted ms-2">Create a new question for this quiz</span>
+                        </div>
+                        <field name="question_ids" widget="many2many_tags" context="{'default_course_id': course_id}" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_lms_quiz_definition" model="ir.actions.act_window">
+        <field name="name">Quiz Definitions</field>
+        <field name="res_model">lms.quiz.definition</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- ================================================================ -->
+    <!-- Attempt Views                                                    -->
+    <!-- ================================================================ -->
+    
+    <!-- Attempt Answer Tree (for inline use in attempt form) -->
+    <record id="view_lms_quiz_attempt_answer_tree" model="ir.ui.view">
+        <field name="name">lms.quiz.attempt.answer.tree</field>
+        <field name="model">lms.quiz.attempt.answer</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" readonly="1"/>
+                <field name="question_id" readonly="1"/>
+                <field name="question_type" readonly="1"/>
+                <field name="selected_answer_id"/>
+                <field name="answer_text" widget="html"/>
+                <field name="auto_score" readonly="1"/>
+                <field name="manual_score"/>
+                <field name="total_score" readonly="1"/>
+                <field name="dependency_state" readonly="1"/>
+            </list>
+        </field>
+    </record>
+    
+    <record id="view_lms_quiz_attempt_tree" model="ir.ui.view">
+        <field name="name">lms.quiz.attempt.tree</field>
+        <field name="model">lms.quiz.attempt</field>
+        <field name="arch" type="xml">
+            <list string="Quiz Attempts" decoration-success="passed" decoration-danger="state == 'graded' and not passed">
+                <field name="reference"/>
+                <field name="quiz_id"/>
+                <field name="student_id"/>
+                <field name="attempt_no"/>
+                <field name="state" widget="badge"/>
+                <field name="auto_score"/>
+                <field name="manual_score"/>
+                <field name="total_score"/>
+                <field name="score_percentage" widget="percentpie"/>
+                <field name="passed"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lms_quiz_attempt_form" model="ir.ui.view">
+        <field name="name">lms.quiz.attempt.form</field>
+        <field name="model">lms.quiz.attempt</field>
+        <field name="arch" type="xml">
+            <form string="Quiz Attempt">
+                <header>
+                    <button name="action_finalize_grading" type="object" string="Finalize Grading" class="oe_highlight"
+                            invisible="state != 'submitted' or not requires_manual_grading"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,submitted,graded"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="reference"/>
+                        <h1><field name="reference" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="quiz_id"/>
+                            <field name="slide_id" readonly="1"/>
+                            <field name="course_id" readonly="1"/>
+                            <field name="student_id"/>
+                            <field name="attempt_no"/>
+                        </group>
+                        <group>
+                            <field name="started_at"/>
+                            <field name="submitted_at"/>
+                            <field name="graded_at"/>
+                            <field name="grader_id"/>
+                        </group>
+                    </group>
+                    <group string="Scores">
+                        <group>
+                            <field name="auto_score"/>
+                            <field name="manual_score"/>
+                            <field name="total_score"/>
+                        </group>
+                        <group>
+                            <field name="max_score"/>
+                            <field name="score_percentage" widget="percentpie"/>
+                            <field name="passed"/>
+                        </group>
+                    </group>
+                    <group string="Feedback">
+                        <field name="manual_feedback" nolabel="1" widget="html"/>
+                    </group>
+                    <notebook>
+                        <page string="Answers" name="answers">
+                            <field name="answer_ids" context="{'tree_view_ref': 'rto_lms.view_lms_quiz_attempt_answer_tree'}"/>
+                        </page>
+                        <page string="Dependencies" name="dependency">
+                            <group>
+                                <field name="dependency_audit_log" nolabel="1" widget="text"/>
+                            </group>
+                        </page>
+                        <page string="Outcome" name="outcome" invisible="not outcome_id">
+                            <group>
+                                <field name="outcome_id"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_lms_quiz_attempt" model="ir.actions.act_window">
+        <field name="name">Quiz Attempts</field>
+        <field name="res_model">lms.quiz.attempt</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_lms_quiz_manual_grading" model="ir.actions.act_window">
+        <field name="name">Manual Grading Queue</field>
+        <field name="res_model">lms.quiz.attempt</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('requires_manual_grading', '=', True), ('state', '!=', 'graded')]</field>
+        <field name="context">{'search_default_state': 'submitted'}</field>
+    </record>
+
+    <!-- ================================================================ -->
+    <!-- Menus                                                             -->
+    <!-- ================================================================ -->
+    <menuitem id="menu_lms_quiz_root"
+              name="Quizzes"
+              parent="menu_rto_lms_root"
+              sequence="40"
+              groups="website_slides.group_website_slides_officer,website_slides.group_website_slides_manager"/>
+
+    <menuitem id="menu_lms_quiz_question_bank"
+              name="Question Bank"
+              parent="menu_lms_quiz_root"
+              action="action_lms_quiz_question"
+              sequence="10"
+              groups="website_slides.group_website_slides_officer,website_slides.group_website_slides_manager"/>
+
+    <menuitem id="menu_lms_quiz_definition"
+              name="Quiz Definitions"
+              parent="menu_lms_quiz_root"
+              action="action_lms_quiz_definition"
+              sequence="20"
+              groups="website_slides.group_website_slides_officer,website_slides.group_website_slides_manager"/>
+
+    <menuitem id="menu_lms_quiz_attempts"
+              name="Attempts"
+              parent="menu_lms_quiz_root"
+              action="action_lms_quiz_attempt"
+              sequence="30"
+              groups="website_slides.group_website_slides_officer,website_slides.group_website_slides_manager"/>
+
+    <menuitem id="menu_lms_quiz_manual_grading"
+              name="Manual Grading"
+              parent="menu_lms_quiz_root"
+              action="action_lms_quiz_manual_grading"
+              sequence="40"
+              groups="website_slides.group_website_slides_officer,website_slides.group_website_slides_manager"/>
+</odoo>

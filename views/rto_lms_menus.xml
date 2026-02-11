@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ====================================================================
+         RTO LMS Menu Structure
+         ==================================================================== -->
+
+    <!-- Delivery Mode Views (must be defined before action) -->
+    <record id="view_rto_delivery_mode_tree" model="ir.ui.view">
+        <field name="name">rto.delivery.mode.tree</field>
+        <field name="model">rto.delivery.mode</field>
+        <field name="arch" type="xml">
+            <list string="Delivery Modes" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="avetmiss_code"/>
+                <field name="name"/>
+                <field name="is_face_to_face" widget="boolean_toggle"/>
+                <field name="is_online" widget="boolean_toggle"/>
+                <field name="is_workplace" widget="boolean_toggle"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_rto_delivery_mode_form" model="ir.ui.view">
+        <field name="name">rto.delivery.mode.form</field>
+        <field name="model">rto.delivery.mode</field>
+        <field name="arch" type="xml">
+            <form string="Delivery Mode">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="display_name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="name"/>
+                            <field name="avetmiss_code"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Classification">
+                            <field name="is_face_to_face"/>
+                            <field name="is_online"/>
+                            <field name="is_workplace"/>
+                        </group>
+                    </group>
+                    <group string="Description">
+                        <field name="description" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Delivery Mode Action (must be defined before menu) -->
+    <record id="action_rto_delivery_mode" model="ir.actions.act_window">
+        <field name="name">Delivery Modes</field>
+        <field name="res_model">rto.delivery.mode</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure delivery modes
+            </p>
+            <p>
+                Delivery modes map to AVETMISS Element 429.
+                Standard modes are pre-configured.
+            </p>
+        </field>
+    </record>
+
+    <!-- Main RTO LMS Menu (under eLearning) -->
+    <menuitem id="menu_rto_lms_root"
+              name="RTO Compliance"
+              parent="website_slides.website_slides_menu_root"
+              sequence="50"/>
+
+    <!-- Unit Courses -->
+    <menuitem id="menu_rto_unit_courses"
+              name="Unit Courses"
+              parent="menu_rto_lms_root"
+              action="action_rto_unit_courses"
+              sequence="10"/>
+
+    <!-- Assessment Outcomes -->
+    <menuitem id="menu_rto_outcomes"
+              name="Assessment Outcomes"
+              parent="menu_rto_lms_root"
+              sequence="20"/>
+
+    <menuitem id="menu_rto_all_outcomes"
+              name="All Outcomes"
+              parent="menu_rto_outcomes"
+              action="action_rto_assessment_outcome"
+              sequence="10"/>
+
+    <menuitem id="menu_rto_unit_outcomes"
+              name="Unit Outcomes (AVETMISS)"
+              parent="menu_rto_outcomes"
+              action="action_rto_unit_outcomes"
+              sequence="20"/>
+
+    <!-- Evidence -->
+    <menuitem id="menu_rto_evidence"
+              name="Evidence Log"
+              parent="menu_rto_lms_root"
+              action="action_rto_evidence_log"
+              sequence="30"/>
+
+    <!-- Configuration -->
+    <menuitem id="menu_rto_lms_config"
+              name="Configuration"
+              parent="menu_rto_lms_root"
+              sequence="100"
+              groups="website_slides.group_website_slides_manager"/>
+
+    <menuitem id="menu_rto_delivery_modes"
+              name="Delivery Modes"
+              parent="menu_rto_lms_config"
+              action="action_rto_delivery_mode"
+              sequence="10"/>
+
+</odoo>

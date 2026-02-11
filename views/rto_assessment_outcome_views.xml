@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ====================================================================
+         RTO Assessment Outcome Views
+         ==================================================================== -->
+
+    <!-- Form View -->
+    <record id="view_rto_assessment_outcome_form" model="ir.ui.view">
+        <field name="name">rto.assessment.outcome.form</field>
+        <field name="model">rto.assessment.outcome</field>
+        <field name="arch" type="xml">
+            <form string="Assessment Outcome">
+                <header>
+                    <button name="action_moderate" type="object" string="Moderate"
+                            class="btn-primary" invisible="is_moderated"/>
+                    <button name="action_sync_to_nat00120" type="object" string="Sync to AVETMISS"
+                            class="btn-secondary" invisible="outcome_level != 'unit' or nat00120_synced"/>
+                    <field name="is_moderated" widget="boolean_toggle" invisible="1"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_evidence" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="evidence_count" widget="statinfo" string="Evidence"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Superseded" bg_color="text-bg-warning"
+                            invisible="is_current"/>
+                    <widget name="web_ribbon" title="Moderated" bg_color="text-bg-success"
+                            invisible="not is_moderated"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="outcome_reference" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Outcome">
+                            <field name="outcome_level"/>
+                            <field name="outcome_code"/>
+                            <field name="outcome_name" readonly="1"/>
+                            <field name="competency_decision"/>
+                            <field name="is_competent" readonly="1" widget="boolean_toggle"/>
+                            <field name="outcome_date"/>
+                        </group>
+                        <group string="Student &amp; Course">
+                            <field name="student_id"/>
+                            <field name="course_id"/>
+                            <field name="unit_code" readonly="1"/>
+                            <field name="activity_id" invisible="outcome_level == 'unit'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Assessor">
+                            <field name="assessor_id"/>
+                            <field name="attempt_number"/>
+                        </group>
+                        <group string="Score" invisible="not score">
+                            <field name="score"/>
+                            <field name="max_score"/>
+                            <field name="score_percentage"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Activity Dates">
+                            <field name="activity_start_date"/>
+                            <field name="activity_end_date"/>
+                        </group>
+                        <group string="AVETMISS Sync">
+                            <field name="nat00120_synced"/>
+                            <field name="nat00120_sync_date" invisible="not nat00120_synced"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Comments">
+                            <field name="assessor_comments" placeholder="Assessor feedback and comments..."/>
+                        </page>
+                        <page string="Moderation" invisible="not is_moderated">
+                            <group>
+                                <field name="moderator_id"/>
+                                <field name="moderation_date"/>
+                                <field name="moderation_notes"/>
+                            </group>
+                        </page>
+                        <page string="Version History" invisible="not supersedes_id and not superseded_by_id">
+                            <group>
+                                <field name="version"/>
+                                <field name="is_current"/>
+                                <field name="supersedes_id"/>
+                                <field name="superseded_by_id"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Tree View -->
+    <record id="view_rto_assessment_outcome_tree" model="ir.ui.view">
+        <field name="name">rto.assessment.outcome.tree</field>
+        <field name="model">rto.assessment.outcome</field>
+        <field name="arch" type="xml">
+            <list string="Assessment Outcomes" decoration-muted="not is_current"
+                  decoration-success="is_competent and is_current"
+                  decoration-danger="not is_competent and outcome_code != '70' and is_current">
+                <field name="outcome_reference"/>
+                <field name="outcome_date"/>
+                <field name="student_id"/>
+                <field name="unit_code"/>
+                <field name="outcome_level"/>
+                <field name="outcome_code"/>
+                <field name="outcome_name"/>
+                <field name="is_competent" widget="boolean"/>
+                <field name="assessor_id"/>
+                <field name="is_moderated" widget="boolean"/>
+                <field name="is_current" widget="boolean"/>
+                <field name="nat00120_synced" widget="boolean" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_rto_assessment_outcome_search" model="ir.ui.view">
+        <field name="name">rto.assessment.outcome.search</field>
+        <field name="model">rto.assessment.outcome</field>
+        <field name="arch" type="xml">
+            <search string="Search Outcomes">
+                <field name="outcome_reference"/>
+                <field name="student_id"/>
+                <field name="course_id"/>
+                <field name="unit_code"/>
+                <field name="assessor_id"/>
+                <filter string="Current Only" name="current" domain="[('is_current', '=', True)]"/>
+                <separator/>
+                <filter string="Unit Level" name="unit_level" domain="[('outcome_level', '=', 'unit')]"/>
+                <filter string="Activity Level" name="activity_level" domain="[('outcome_level', '=', 'activity')]"/>
+                <separator/>
+                <filter string="Competent (20)" name="competent" domain="[('outcome_code', '=', '20')]"/>
+                <filter string="Not Yet Competent (30)" name="not_competent" domain="[('outcome_code', '=', '30')]"/>
+                <filter string="Continuing (70)" name="continuing" domain="[('outcome_code', '=', '70')]"/>
+                <filter string="Withdrawn (40)" name="withdrawn" domain="[('outcome_code', '=', '40')]"/>
+                <separator/>
+                <filter string="Moderated" name="moderated" domain="[('is_moderated', '=', True)]"/>
+                <filter string="Pending Moderation" name="pending_moderation" domain="[('is_moderated', '=', False)]"/>
+                <separator/>
+                <filter string="Not Synced to AVETMISS" name="not_synced" domain="[('nat00120_synced', '=', False), ('outcome_level', '=', 'unit')]"/>
+                <group>
+                    <filter string="Student" name="group_student" context="{'group_by': 'student_id'}"/>
+                    <filter string="Course/Unit" name="group_course" context="{'group_by': 'course_id'}"/>
+                    <filter string="Outcome Code" name="group_outcome" context="{'group_by': 'outcome_code'}"/>
+                    <filter string="Assessor" name="group_assessor" context="{'group_by': 'assessor_id'}"/>
+                    <filter string="Outcome Date" name="group_date" context="{'group_by': 'outcome_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Kanban View -->
+    <record id="view_rto_assessment_outcome_kanban" model="ir.ui.view">
+        <field name="name">rto.assessment.outcome.kanban</field>
+        <field name="model">rto.assessment.outcome</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="outcome_code" class="o_kanban_small_column">
+                <field name="outcome_code"/>
+                <field name="is_competent"/>
+                <field name="is_current"/>
+                <templates>
+                    <t t-name="card">
+                        <div t-attf-class="#{record.is_current.raw_value ? '' : 'text-muted'}">
+                            <field name="student_id"/>
+                            <div class="text-muted">
+                                <field name="unit_code"/> - <field name="outcome_date"/>
+                            </div>
+                            <div>
+                                <span t-if="record.is_competent.raw_value" class="badge text-bg-success">Competent</span>
+                                <span t-elif="record.outcome_code.raw_value == '70'" class="badge text-bg-info">Continuing</span>
+                                <span t-else="" class="badge text-bg-warning">NYC</span>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_rto_assessment_outcome" model="ir.actions.act_window">
+        <field name="name">Assessment Outcomes</field>
+        <field name="res_model">rto.assessment.outcome</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="context">{'search_default_current': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No assessment outcomes recorded yet
+            </p>
+            <p>
+                Assessment outcomes are recorded when trainers/assessors mark student work.
+                <br/><br/>
+                Outcomes map to AVETMISS codes:
+                <ul>
+                    <li><strong>20</strong> - Competency achieved</li>
+                    <li><strong>30</strong> - Competency not achieved</li>
+                    <li><strong>70</strong> - Continuing/enrolled</li>
+                </ul>
+            </p>
+        </field>
+    </record>
+
+    <!-- Unit-Level Outcomes Action -->
+    <record id="action_rto_unit_outcomes" model="ir.actions.act_window">
+        <field name="name">Unit Outcomes (AVETMISS)</field>
+        <field name="res_model">rto.assessment.outcome</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('outcome_level', '=', 'unit')]</field>
+        <field name="context">{'search_default_current': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No unit-level outcomes yet
+            </p>
+            <p>
+                Unit-level outcomes are aggregated from activity outcomes
+                and flow to AVETMISS NAT00120 for reporting.
+            </p>
+        </field>
+    </record>
+
+</odoo>

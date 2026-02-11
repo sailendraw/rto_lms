@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ====================================================================
+         RTO Evidence Log Views
+         ==================================================================== -->
+
+    <!-- Form View -->
+    <record id="view_rto_evidence_log_form" model="ir.ui.view">
+        <field name="name">rto.evidence.log.form</field>
+        <field name="model">rto.evidence.log</field>
+        <field name="arch" type="xml">
+            <form string="Evidence Record" create="1" edit="0" delete="0">
+                <header>
+                    <button name="verify_integrity" type="object" string="Verify Integrity"
+                            class="btn-secondary" icon="fa-shield"/>
+                    <button name="action_view_version_history" type="object" string="Version History"
+                            class="btn-secondary" icon="fa-history"
+                            invisible="not supersedes_id and not superseded_by_id"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_attachments" type="object"
+                                class="oe_stat_button" icon="fa-paperclip"
+                                invisible="attachment_count == 0">
+                            <field name="attachment_count" widget="statinfo" string="Attachments"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Superseded" bg_color="text-bg-warning"
+                            invisible="is_current"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="evidence_reference" readonly="1"/>
+                        </h1>
+                        <h2>
+                            <field name="summary" readonly="1"/>
+                        </h2>
+                    </div>
+                    <group>
+                        <group string="Evidence Details">
+                            <field name="evidence_type"/>
+                            <field name="student_id"/>
+                            <field name="course_id"/>
+                            <field name="activity_id"/>
+                            <field name="create_date"/>
+                            <field name="create_uid"/>
+                        </group>
+                        <group string="Actor &amp; Audit">
+                            <field name="actor_type"/>
+                            <field name="actor_name"/>
+                            <field name="actor_email"/>
+                            <field name="ip_address"/>
+                            <field name="user_agent"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Integrity">
+                            <field name="content_hash"/>
+                            <field name="is_verified" widget="boolean_toggle"/>
+                        </group>
+                        <group string="Version">
+                            <field name="version"/>
+                            <field name="is_current"/>
+                            <field name="supersedes_id"/>
+                            <field name="superseded_by_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Evidence Content">
+                            <group>
+                                <field name="evidence_text" readonly="1"/>
+                            </group>
+                            <group>
+                                <field name="evidence_data" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Attachments">
+                            <field name="attachment_ids" readonly="1" widget="many2many_binary"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Tree View -->
+    <record id="view_rto_evidence_log_tree" model="ir.ui.view">
+        <field name="name">rto.evidence.log.tree</field>
+        <field name="model">rto.evidence.log</field>
+        <field name="arch" type="xml">
+            <list string="Evidence Log" create="1" edit="0" delete="0"
+                  decoration-muted="not is_current">
+                <field name="evidence_reference"/>
+                <field name="create_date"/>
+                <field name="evidence_type"/>
+                <field name="student_id"/>
+                <field name="course_id"/>
+                <field name="activity_id" optional="show"/>
+                <field name="summary"/>
+                <field name="actor_type"/>
+                <field name="is_verified" widget="boolean"/>
+                <field name="is_current" widget="boolean"/>
+                <field name="version" optional="hide"/>
+                <field name="attachment_count" string="Files"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_rto_evidence_log_search" model="ir.ui.view">
+        <field name="name">rto.evidence.log.search</field>
+        <field name="model">rto.evidence.log</field>
+        <field name="arch" type="xml">
+            <search string="Search Evidence">
+                <field name="evidence_reference"/>
+                <field name="summary"/>
+                <field name="student_id"/>
+                <field name="course_id"/>
+                <field name="activity_id"/>
+                <filter string="Current Only" name="current" domain="[('is_current', '=', True)]"/>
+                <filter string="All Versions" name="all_versions" domain="[]"/>
+                <separator/>
+                <filter string="Submissions" name="submissions" domain="[('evidence_type', '=', 'submission')]"/>
+                <filter string="Outcomes" name="outcomes" domain="[('evidence_type', '=', 'outcome')]"/>
+                <filter string="Observations" name="observations" domain="[('evidence_type', '=', 'observation')]"/>
+                <filter string="Attachments" name="attachments" domain="[('evidence_type', '=', 'attachment')]"/>
+                <group>
+                    <filter string="Student" name="group_student" context="{'group_by': 'student_id'}"/>
+                    <filter string="Course" name="group_course" context="{'group_by': 'course_id'}"/>
+                    <filter string="Activity" name="group_activity" context="{'group_by': 'activity_id'}"/>
+                    <filter string="Evidence Type" name="group_type" context="{'group_by': 'evidence_type'}"/>
+                    <filter string="Date" name="group_date" context="{'group_by': 'create_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_rto_evidence_log" model="ir.actions.act_window">
+        <field name="name">Evidence Log</field>
+        <field name="res_model">rto.evidence.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_current': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No evidence records yet
+            </p>
+            <p>
+                Evidence records are automatically created when students submit assessments,
+                upload evidence, or when trainers record outcomes.
+                <br/><br/>
+                <strong>Note:</strong> Evidence records are immutable for audit compliance.
+                They cannot be modified or deleted.
+            </p>
+        </field>
+    </record>
+
+</odoo>

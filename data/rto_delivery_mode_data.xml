@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!--
+        AVETMISS Delivery Mode Identifier (Element 429)
+        Per AVETMISS VET Provider Collection Release 8.0
+
+        Standard codes only - blended delivery should use the predominant mode code.
+        Use the is_face_to_face, is_online, is_workplace flags for internal tracking.
+        -->
+
+        <record id="delivery_mode_10" model="rto.delivery.mode">
+            <field name="name">Classroom-based/Face-to-face</field>
+            <field name="avetmiss_code">10</field>
+            <field name="description">Internal delivery, classroom-based face-to-face training at an RTO campus or training facility. Includes lectures, tutorials, practical sessions, and workshops conducted on-site.</field>
+            <field name="sequence">10</field>
+            <field name="is_face_to_face">True</field>
+            <field name="is_online">False</field>
+            <field name="is_workplace">False</field>
+        </record>
+
+        <record id="delivery_mode_20" model="rto.delivery.mode">
+            <field name="name">External/Distance Education</field>
+            <field name="avetmiss_code">20</field>
+            <field name="description">External delivery, distance education through correspondence materials, printed workbooks, and self-paced learning packages sent to students. Does not include online/electronic delivery.</field>
+            <field name="sequence">20</field>
+            <field name="is_face_to_face">False</field>
+            <field name="is_online">False</field>
+            <field name="is_workplace">False</field>
+        </record>
+
+        <record id="delivery_mode_30" model="rto.delivery.mode">
+            <field name="name">Workplace-based</field>
+            <field name="avetmiss_code">30</field>
+            <field name="description">Workplace-based delivery where training occurs at the student's workplace. Includes on-the-job training, apprenticeships, and traineeships conducted at employer premises.</field>
+            <field name="sequence">30</field>
+            <field name="is_face_to_face">True</field>
+            <field name="is_online">False</field>
+            <field name="is_workplace">True</field>
+        </record>
+
+        <record id="delivery_mode_40" model="rto.delivery.mode">
+            <field name="name">Online/Electronic-based</field>
+            <field name="avetmiss_code">40</field>
+            <field name="description">Online/electronic-based delivery through internet, intranet, or electronic platforms. Includes web-based courses, virtual classrooms, and computer-based training modules.</field>
+            <field name="sequence">40</field>
+            <field name="is_face_to_face">False</field>
+            <field name="is_online">True</field>
+            <field name="is_workplace">False</field>
+        </record>
+
+        <record id="delivery_mode_90" model="rto.delivery.mode">
+            <field name="name">Not Applicable</field>
+            <field name="avetmiss_code">90</field>
+            <field name="description">Not applicable. Use when no training delivery is associated (e.g., Credit Transfer or RPL where no training delivery occurs).</field>
+            <field name="sequence">90</field>
+            <field name="is_face_to_face">False</field>
+            <field name="is_online">False</field>
+            <field name="is_workplace">False</field>
+        </record>
+
+        <record id="delivery_mode_99" model="rto.delivery.mode">
+            <field name="name">Not Specified</field>
+            <field name="avetmiss_code">99</field>
+            <field name="description">Not specified. Use only when the delivery mode is not known or not recorded.</field>
+            <field name="sequence">99</field>
+            <field name="is_face_to_face">False</field>
+            <field name="is_online">False</field>
+            <field name="is_workplace">False</field>
+        </record>
+
+    </data>
+</odoo>

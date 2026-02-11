@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend the Quiz tab to show expected answers for text-based questions -->
+    <record id="view_slide_slide_form_quiz_tab_extended" model="ir.ui.view">
+        <field name="name">slide.slide.form.quiz.tab.extended</field>
+        <field name="model">slide.slide</field>
+        <field name="inherit_id" ref="website_slides.view_slide_slide_form"/>
+        <field name="arch" type="xml">
+            <!-- Replace the question_ids tree view to show expected_answer_text -->
+            <xpath expr="//field[@name='question_ids']//list" position="replace">
+                <list>
+                    <field name="sequence" widget="handle"/>
+                    <field name="question" string="Question"/>
+                    <field name="question_type" optional="hide"/>
+                    <field name="answer_ids" string="Answers" 
+                           widget="many2many_tags"/>
+                    <field name="expected_answer_text" string="Expected Answer"/>
+                </list>
+            </xpath>
+        </field>
+    </record>
+</odoo>
