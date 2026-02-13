@@ -42,11 +42,20 @@ class RTOWebsiteSlides(WebsiteSlides):
 
         # For assignment slides, render the assignment template
         if slide.slide_category == 'assignment':
+            # Ensure assignment_id and related fields are loaded (prevent lazy loading issues)
+            slide = slide.sudo().with_context(prefetch_fields=True)
+            if not slide.assignment_id:
+                return {
+                    'html_content': '<div class="alert alert-warning">No assignment configured for this slide.</div>'
+                }
+
+            # Render the assignment template with full context
             html_content = request.env['ir.qweb']._render('rto_lms.assignment_slide_content', {
                 'slide': slide,
             })
+            # Convert to string if needed (Odoo's _render returns Markup which is str-like)
             return {
-                'html_content': html_content
+                'html_content': str(html_content) if html_content else ''
             }
 
         # For other slides, use parent implementation

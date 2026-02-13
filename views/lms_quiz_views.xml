@@ -86,7 +86,7 @@
                               invisible="question_type not in ['short', 'essay']"
                               name="text_answer">
                             <div class="alert alert-warning" role="alert" invisible="question_type != 'short'">
-                                <i class="fa fa-exclamation-triangle me-2"/>
+                                <i class="fa fa-exclamation-triangle me-2" title="Warning"/>
                                 <strong>Required:</strong> You must define an Expected Answer. Student responses will be validated against this answer.
                             </div>
                             <group>
@@ -106,7 +106,7 @@
                               invisible="question_type != 'numerical'"
                               name="numerical">
                             <div class="alert alert-warning" role="alert">
-                                <i class="fa fa-exclamation-triangle me-2"/>
+                                <i class="fa fa-exclamation-triangle me-2" title="Warning"/>
                                 <strong>Required:</strong> You must define the Expected Answer (numerical value). Student responses will be validated against this number.
                             </div>
                             <group>
