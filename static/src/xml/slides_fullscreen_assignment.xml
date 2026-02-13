@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <!-- Extend fullscreen content template to include assignment rendering -->
+    <t t-name="website.slides.fullscreen.content" t-inherit="website_slides.website.slides.fullscreen.content" t-inherit-mode="extension">
+        <!-- Add assignment rendering after infographic -->
+        <xpath expr="//t[@t-if=&quot;widget._slideValue.category === 'infographic'&quot;]" position="after">
+            <t t-if="widget._slideValue.category === 'assignment'">
+                <div class="o_wslide_fs_article_content bg-white block w-100 overflow-auto p-3">
+                    <!-- Assignment content will be loaded via _fetchHtmlContent -->
+                </div>
+            </t>
+        </xpath>
+    </t>
+
+</templates>

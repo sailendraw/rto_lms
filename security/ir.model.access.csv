@@ -27,3 +27,12 @@ access_lms_quiz_attempt_manager,lms.quiz.attempt.manager,model_lms_quiz_attempt,
 access_lms_quiz_attempt_answer_portal,lms.quiz.attempt.answer.portal,model_lms_quiz_attempt_answer,base.group_portal,1,1,1,0
 access_lms_quiz_attempt_answer_user,lms.quiz.attempt.answer.user,model_lms_quiz_attempt_answer,base.group_user,1,1,1,0
 access_lms_quiz_attempt_answer_manager,lms.quiz.attempt.answer.manager,model_lms_quiz_attempt_answer,website_slides.group_website_slides_manager,1,1,1,1
+access_rto_assignment_portal,rto.assignment.portal,model_rto_assignment,base.group_portal,1,0,0,0
+access_rto_assignment_user,rto.assignment.user,model_rto_assignment,base.group_user,1,0,0,0
+access_rto_assignment_officer,rto.assignment.officer,model_rto_assignment,website_slides.group_website_slides_officer,1,1,1,0
+access_rto_assignment_manager,rto.assignment.manager,model_rto_assignment,website_slides.group_website_slides_manager,1,1,1,1
+access_rto_assignment_submission_portal,rto.assignment.submission.portal,model_rto_assignment_submission,base.group_portal,1,1,1,0
+access_rto_assignment_submission_user,rto.assignment.submission.user,model_rto_assignment_submission,base.group_user,1,1,1,0
+access_rto_assignment_submission_officer,rto.assignment.submission.officer,model_rto_assignment_submission,website_slides.group_website_slides_officer,1,1,1,0
+access_rto_assignment_submission_manager,rto.assignment.submission.manager,model_rto_assignment_submission,website_slides.group_website_slides_manager,1,1,1,1
+access_ir_attachment_portal,ir.attachment.portal,base.model_ir_attachment,base.group_portal,1,1,1,0

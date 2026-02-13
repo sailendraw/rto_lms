@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Embedded Form View (for inline display in slide form) -->
+    <record id="view_rto_assignment_embedded_form" model="ir.ui.view">
+        <field name="name">rto.assignment.embedded.form</field>
+        <field name="model">rto.assignment</field>
+        <field name="arch" type="xml">
+            <form string="Assignment Configuration">
+                <group>
+                    <field name="name" invisible="1"/>
+                    <field name="slide_id" invisible="1"/>
+                    <field name="course_id" invisible="1"/>
+                </group>
+                <notebook>
+                    <page string="Content">
+                        <group>
+                            <field name="always_show_description"/>
+                        </group>
+                        <field name="description" placeholder="Brief overview of the assignment..."/>
+                        <separator string="Instructions"/>
+                        <field name="instructions" placeholder="Detailed instructions for completing the assignment..."/>
+                    </page>
+                    <page string="Availability &amp; Dates">
+                        <group>
+                            <group>
+                                <field name="allow_submission_from"/>
+                                <field name="due_date"/>
+                                <field name="cut_off_date"/>
+                            </group>
+                            <group>
+                                <field name="is_available" widget="boolean_toggle" readonly="1"/>
+                                <field name="is_past_due" widget="boolean_toggle" readonly="1"/>
+                                <field name="is_past_cutoff" widget="boolean_toggle" readonly="1"/>
+                            </group>
+                        </group>
+                    </page>
+                    <page string="File Settings">
+                        <group>
+                            <group>
+                                <field name="max_files"/>
+                                <field name="max_file_size_mb"/>
+                                <field name="accepted_file_types"/>
+                            </group>
+                            <group>
+                                <field name="require_submit_button"/>
+                            </group>
+                        </group>
+                    </page>
+                    <page string="Resubmission">
+                        <group>
+                            <group>
+                                <field name="allow_resubmission"/>
+                                <field name="max_attempts" invisible="not allow_resubmission"/>
+                                <field name="reopen_method" invisible="not allow_resubmission"/>
+                            </group>
+                        </group>
+                    </page>
+                    <page string="Grading">
+                        <group>
+                            <group>
+                                <field name="grading_type"/>
+                                <field name="max_grade" invisible="grading_type == 'pass_fail'"/>
+                                <field name="pass_grade"/>
+                            </group>
+                        </group>
+                    </page>
+                </notebook>
+            </form>
+        </field>
+    </record>
+
+    <!-- Full Form View (for standalone use) -->
+    <record id="view_rto_assignment_form" model="ir.ui.view">
+        <field name="name">rto.assignment.form</field>
+        <field name="model">rto.assignment</field>
+        <field name="arch" type="xml">
+            <form string="Assignment">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_submissions" type="object"
+                                class="oe_stat_button" icon="fa-files-o">
+                            <field name="submission_count" widget="statinfo" string="Submissions"/>
+                        </button>
+                        <button name="action_view_submissions" type="object"
+                                class="oe_stat_button" icon="fa-check-square-o"
+                                context="{'search_default_graded': 1}">
+                            <field name="graded_count" widget="statinfo" string="Graded"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Assignment Name..."/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Basic Information">
+                            <field name="slide_id"/>
+                            <field name="course_id" readonly="1"/>
+                        </group>
+                        <group string="Availability">
+                            <field name="is_available" widget="boolean_toggle" readonly="1"/>
+                            <field name="is_past_due" widget="boolean_toggle" readonly="1"/>
+                            <field name="is_past_cutoff" widget="boolean_toggle" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Content">
+                            <group>
+                                <field name="always_show_description"/>
+                            </group>
+                            <field name="description" placeholder="Brief overview of the assignment..."/>
+                            <separator string="Instructions"/>
+                            <field name="instructions" placeholder="Detailed instructions for completing the assignment..."/>
+                        </page>
+                        <page string="Availability &amp; Dates">
+                            <group>
+                                <group>
+                                    <field name="allow_submission_from"/>
+                                    <field name="due_date"/>
+                                    <field name="cut_off_date"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="File Settings">
+                            <group>
+                                <group>
+                                    <field name="max_files"/>
+                                    <field name="max_file_size_mb"/>
+                                    <field name="accepted_file_types"/>
+                                </group>
+                                <group>
+                                    <field name="require_submit_button"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Resubmission">
+                            <group>
+                                <group>
+                                    <field name="allow_resubmission"/>
+                                    <field name="max_attempts" invisible="not allow_resubmission"/>
+                                    <field name="reopen_method" invisible="not allow_resubmission"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Grading">
+                            <group>
+                                <group>
+                                    <field name="grading_type"/>
+                                    <field name="max_grade" invisible="grading_type == 'pass_fail'"/>
+                                    <field name="pass_grade"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- List View -->
+    <record id="view_rto_assignment_tree" model="ir.ui.view">
+        <field name="name">rto.assignment.tree</field>
+        <field name="model">rto.assignment</field>
+        <field name="arch" type="xml">
+            <list string="Assignments" decoration-info="is_available" decoration-muted="is_past_cutoff">
+                <field name="name"/>
+                <field name="course_id"/>
+                <field name="slide_id"/>
+                <field name="due_date"/>
+                <field name="submission_count"/>
+                <field name="graded_count"/>
+                <field name="is_available" widget="boolean"/>
+                <field name="is_past_due" widget="boolean" optional="hide"/>
+                <field name="is_past_cutoff" widget="boolean" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_rto_assignment" model="ir.actions.act_window">
+        <field name="name">Assignments</field>
+        <field name="res_model">rto.assignment</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first assignment
+            </p>
+            <p>
+                Assignments allow students to submit files for assessment.
+            </p>
+        </field>
+    </record>
+
+</odoo>

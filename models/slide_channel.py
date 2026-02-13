@@ -250,6 +250,12 @@ class SlideChannel(models.Model):
         compute='_compute_evidence_count',
         help='Number of evidence records generated.',
     )
+    nbr_assignment = fields.Integer(
+        string='Assignments',
+        compute='_compute_slides_statistics',
+        store=True,
+        help='Number of assignment activities in this course.',
+    )
 
     # =========================================================================
     # AVETMISS INTEGRATION
@@ -337,6 +343,7 @@ class SlideChannel(models.Model):
             course.evidence_count = self.env['rto.evidence.log'].search_count([
                 ('course_id', '=', course.id)
             ])
+
 
     def _compute_nat00120_ids(self):
         """Get related AVETMISS NAT00120 training activity records."""

@@ -461,6 +461,10 @@ class RtoAssessmentOutcome(models.Model):
 
         # Create evidence log entry for each outcome
         for record in records:
+            assessor = record.assessor_id
+            assessor_home = getattr(assessor, 'address_home_id', False)
+            assessor_user = getattr(assessor, 'user_id', False)
+            actor_partner = assessor_home or (assessor_user.partner_id if assessor_user else False)
             self.env['rto.evidence.log'].create({
                 'company_id': record.company_id.id,
                 'course_id': record.course_id.id,
@@ -478,7 +482,7 @@ class RtoAssessmentOutcome(models.Model):
                     'is_competent': record.is_competent,
                 },
                 'actor_type': 'assessor',
-                'actor_id': record.assessor_id.address_home_id.id if record.assessor_id.address_home_id else False,
+                'actor_id': actor_partner.id if actor_partner else False,
             })
 
         return records

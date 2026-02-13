@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <!-- Tutorial template for Assignment category in upload dialog -->
+    <t t-name="rto_lms.SlideCategoryTutorial.Assignment">
+        <div class="h5">Create an Assignment for Students</div>
+        <div>
+            With Assignments, you can create file submission tasks for students.
+            Students upload their work, and you review and grade their submissions.
+        </div>
+    </t>
+</templates>

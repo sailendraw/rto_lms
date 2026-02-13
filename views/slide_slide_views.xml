@@ -92,6 +92,86 @@
                         invisible="not evidence_required">
                     <field name="evidence_log_count" widget="statinfo" string="Evidence"/>
                 </button>
+                <button name="action_view_assignment_submissions" type="object"
+                        class="oe_stat_button" icon="fa-files-o"
+                        invisible="slide_category != 'assignment' or not assignment_id">
+                    <span class="o_stat_text">Submissions</span>
+                </button>
+            </xpath>
+
+            <!-- Add help text for assignment category -->
+            <xpath expr="//field[@name='slide_category']" position="after">
+                <div class="text-muted" colspan="2" invisible="slide_category != 'assignment'">
+                    <i class="fa fa-info-circle"/> You can add and manage assignments in the 'Assignments' tab below.
+                </div>
+            </xpath>
+
+            <!-- Hide Quiz tab for assignment slides -->
+            <xpath expr="//page[@name='quiz']" position="attributes">
+                <attribute name="invisible">slide_category == 'assignment'</attribute>
+            </xpath>
+
+            <!-- Add Assignment Configuration with inline fields -->
+            <xpath expr="//page[@name='quiz']" position="after">
+                <page string="Assignment" name="assignment" invisible="slide_category != 'assignment'">
+                    <field name="assignment_id" invisible="1"/>
+                    <field name="has_assignment" invisible="1"/>
+
+                    <notebook>
+                        <page string="Content">
+                            <group>
+                                <field name="assignment_always_show_description"/>
+                            </group>
+                            <field name="assignment_description" placeholder="Brief overview of the assignment..."/>
+                            <separator string="Instructions"/>
+                            <field name="assignment_instructions" placeholder="Detailed instructions for completing the assignment..."/>
+                        </page>
+                        <page string="Availability &amp; Dates">
+                            <group>
+                                <group string="Submission Period">
+                                    <field name="assignment_allow_submission_from"/>
+                                    <field name="assignment_due_date"/>
+                                    <field name="assignment_cut_off_date"/>
+                                </group>
+                                <group string="Status">
+                                    <field name="assignment_is_available" widget="boolean_toggle" readonly="1"/>
+                                    <field name="assignment_is_past_due" widget="boolean_toggle" readonly="1"/>
+                                    <field name="assignment_is_past_cutoff" widget="boolean_toggle" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="File Settings">
+                            <group>
+                                <group>
+                                    <field name="assignment_max_files"/>
+                                    <field name="assignment_max_file_size_mb"/>
+                                    <field name="assignment_accepted_file_types"/>
+                                </group>
+                                <group>
+                                    <field name="assignment_require_submit_button"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Resubmission">
+                            <group>
+                                <group>
+                                    <field name="assignment_allow_resubmission"/>
+                                    <field name="assignment_max_attempts" invisible="not assignment_allow_resubmission"/>
+                                    <field name="assignment_reopen_method" invisible="not assignment_allow_resubmission"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Grading">
+                            <group>
+                                <group>
+                                    <field name="assignment_grading_type"/>
+                                    <field name="assignment_max_grade" invisible="assignment_grading_type == 'pass_fail'"/>
+                                    <field name="assignment_pass_grade"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </page>
             </xpath>
 
         </field>

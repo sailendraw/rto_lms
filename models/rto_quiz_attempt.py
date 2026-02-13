@@ -207,7 +207,7 @@ class RtoQuizAttempt(models.Model):
     def create(self, vals):
         """Generate reference number on create"""
         if vals.get('reference', _('New')) == _('New'):
-            vals['reference'] = self.env['ir.sequence'].next_by_code(
+            vals['reference'] = self.env['ir.sequence'].sudo().next_by_code(
                 'rto.quiz.attempt') or _('New')
         
         # Capture IP and user agent

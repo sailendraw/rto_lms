@@ -45,6 +45,23 @@ class SlideSlide(models.Model):
     _inherit = 'slide.slide'
 
     # =========================================================================
+    # ASSIGNMENT INTEGRATION
+    # =========================================================================
+    # Extend slide_category to add 'assignment' option
+    slide_category = fields.Selection(
+        selection_add=[('assignment', 'Assignment')],
+        ondelete={'assignment': 'cascade'}
+    )
+
+    # Statistics field for when this slide is a category
+    nbr_assignment = fields.Integer(
+        string='Number of Assignments',
+        compute='_compute_slides_statistics',
+        store=True,
+        help='Number of assignment slides under this category.',
+    )
+
+    # =========================================================================
     # RTO ACTIVITY TYPE
     # =========================================================================
     rto_activity_type = fields.Selection(
@@ -217,6 +234,44 @@ class SlideSlide(models.Model):
     )
 
     # =========================================================================
+    # ASSIGNMENT LINK (One2one relationship - one slide = one assignment)
+    # =========================================================================
+    assignment_id = fields.Many2one(
+        'rto.assignment',
+        string='Assignment',
+        help='File submission assignment configuration for this slide.',
+        ondelete='cascade',
+    )
+
+    has_assignment = fields.Boolean(
+        string='Has Assignment',
+        compute='_compute_has_assignment',
+        store=True,
+        help='Whether this slide has an assignment configured.',
+    )
+
+    # Related fields for inline editing of assignment properties
+    assignment_description = fields.Html(related='assignment_id.description', readonly=False, string="Description")
+    assignment_instructions = fields.Html(related='assignment_id.instructions', readonly=False, string="Instructions")
+    assignment_allow_submission_from = fields.Datetime(related='assignment_id.allow_submission_from', readonly=False, string="Allow Submissions From")
+    assignment_due_date = fields.Datetime(related='assignment_id.due_date', readonly=False, string="Due Date")
+    assignment_cut_off_date = fields.Datetime(related='assignment_id.cut_off_date', readonly=False, string="Cut-off Date")
+    assignment_max_files = fields.Integer(related='assignment_id.max_files', readonly=False, string="Max Files")
+    assignment_max_file_size_mb = fields.Integer(related='assignment_id.max_file_size_mb', readonly=False, string="Max File Size (MB)")
+    assignment_accepted_file_types = fields.Char(related='assignment_id.accepted_file_types', readonly=False, string="Accepted File Types")
+    assignment_require_submit_button = fields.Boolean(related='assignment_id.require_submit_button', readonly=False, string="Require Submit Button")
+    assignment_allow_resubmission = fields.Boolean(related='assignment_id.allow_resubmission', readonly=False, string="Allow Resubmission")
+    assignment_max_attempts = fields.Integer(related='assignment_id.max_attempts', readonly=False, string="Max Attempts")
+    assignment_reopen_method = fields.Selection(related='assignment_id.reopen_method', readonly=False, string="Reopen Method")
+    assignment_grading_type = fields.Selection(related='assignment_id.grading_type', readonly=False, string="Grading Type")
+    assignment_max_grade = fields.Float(related='assignment_id.max_grade', readonly=False, string="Maximum Grade")
+    assignment_pass_grade = fields.Float(related='assignment_id.pass_grade', readonly=False, string="Pass Grade")
+    assignment_always_show_description = fields.Boolean(related='assignment_id.always_show_description', readonly=False, string="Always Show Description")
+    assignment_is_available = fields.Boolean(related='assignment_id.is_available', string="Is Available")
+    assignment_is_past_due = fields.Boolean(related='assignment_id.is_past_due', string="Is Past Due")
+    assignment_is_past_cutoff = fields.Boolean(related='assignment_id.is_past_cutoff', string="Is Past Cutoff")
+
+    # =========================================================================
     # LINKS TO OUTCOMES
     # =========================================================================
     outcome_ids = fields.One2many(
@@ -287,7 +342,13 @@ class SlideSlide(models.Model):
         """Count evidence log entries."""
         for activity in self:
             activity.evidence_log_count = len(activity.evidence_log_ids)
-    
+
+    @api.depends('assignment_id')
+    def _compute_has_assignment(self):
+        """Check if slide has an assignment configured."""
+        for slide in self:
+            slide.has_assignment = bool(slide.assignment_id)
+
     # =========================================================================
     # VALIDATION
     # =========================================================================
@@ -330,8 +391,28 @@ class SlideSlide(models.Model):
             self.assessment_method = 'practical'
 
     # =========================================================================
+    # CRUD HOOKS
+    # =========================================================================
+
+
+    # =========================================================================
     # BUSINESS METHODS
     # =========================================================================
+
+    def action_view_assignment_submissions(self):
+        """Open submissions list filtered by this slide's assignment."""
+        self.ensure_one()
+        if not self.assignment_id:
+            raise UserError(_('No assignment is configured for this slide.'))
+
+        action = self.env.ref('rto_lms.action_rto_assignment_submission').read()[0]
+        action['name'] = _('Submissions - %s', self.assignment_id.name)
+        action['domain'] = [('assignment_id', '=', self.assignment_id.id)]
+        action['context'] = {
+            'default_assignment_id': self.assignment_id.id,
+            'search_default_submitted': 1,
+        }
+        return action
 
     def action_sync_quiz_questions(self):
         """Sync questions from quiz definition to slide questions."""
@@ -425,20 +506,118 @@ class SlideSlide(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Override to sync questions on quiz slide creation."""
+        """Override to handle quiz and assignment slide creation."""
+        # Map slide fields to assignment fields
+        assignment_field_mapping = {
+            'assignment_description': 'description',
+            'assignment_instructions': 'instructions',
+            'assignment_always_show_description': 'always_show_description',
+            'assignment_allow_submission_from': 'allow_submission_from',
+            'assignment_due_date': 'due_date',
+            'assignment_cut_off_date': 'cut_off_date',
+            'assignment_max_files': 'max_files',
+            'assignment_max_file_size_mb': 'max_file_size_mb',
+            'assignment_accepted_file_types': 'accepted_file_types',
+            'assignment_require_submit_button': 'require_submit_button',
+            'assignment_allow_resubmission': 'allow_resubmission',
+            'assignment_max_attempts': 'max_attempts',
+            'assignment_reopen_method': 'reopen_method',
+            'assignment_grading_type': 'grading_type',
+            'assignment_max_grade': 'max_grade',
+            'assignment_pass_grade': 'pass_grade',
+        }
+
+        # Extract assignment-related fields from vals to avoid related-field writes during create
+        assignment_vals_list = []
+        for vals in vals_list:
+            assignment_vals = {}
+            for slide_field, assignment_field in assignment_field_mapping.items():
+                if slide_field in vals:
+                    assignment_vals[assignment_field] = vals.pop(slide_field)
+            assignment_vals_list.append(assignment_vals)
+
         slides = super().create(vals_list)
-        for slide in slides:
+
+        for slide, assignment_vals in zip(slides, assignment_vals_list):
+            # Ensure assignment exists with slide_id and apply extracted fields
+            if slide.slide_category == 'assignment':
+                if slide.assignment_id:
+                    if not slide.assignment_id.slide_id:
+                        slide.assignment_id.write({'slide_id': slide.id})
+                    if assignment_vals:
+                        slide.assignment_id.write(assignment_vals)
+                else:
+                    assignment_vals.setdefault('name', slide.name or _('New Assignment'))
+                    assignment_vals['slide_id'] = slide.id
+                    assignment = self.env['rto.assignment'].with_context(allow_assignment_without_slide=True).create(assignment_vals)
+                    slide.assignment_id = assignment.id
+
+            # Handle quiz slides with quiz definition
             if slide.slide_category == 'quiz' and slide.quiz_definition_id:
                 slide.action_sync_quiz_questions()
+
         return slides
 
     def write(self, vals):
-        """Override to sync questions when quiz definition changes."""
+        """Override to sync questions when quiz definition changes and handle assignment fields."""
+        import logging
+        _logger = logging.getLogger(__name__)
+
+        _logger.info("="*80)
+        _logger.info("SLIDE WRITE - vals keys: %s", list(vals.keys()))
+
+        # Map of assignment-related field names
+        assignment_field_mapping = {
+            'assignment_description': 'description',
+            'assignment_instructions': 'instructions',
+            'assignment_always_show_description': 'always_show_description',
+            'assignment_allow_submission_from': 'allow_submission_from',
+            'assignment_due_date': 'due_date',
+            'assignment_cut_off_date': 'cut_off_date',
+            'assignment_max_files': 'max_files',
+            'assignment_max_file_size_mb': 'max_file_size_mb',
+            'assignment_accepted_file_types': 'accepted_file_types',
+            'assignment_require_submit_button': 'require_submit_button',
+            'assignment_allow_resubmission': 'allow_resubmission',
+            'assignment_max_attempts': 'max_attempts',
+            'assignment_reopen_method': 'reopen_method',
+            'assignment_grading_type': 'grading_type',
+            'assignment_max_grade': 'max_grade',
+            'assignment_pass_grade': 'pass_grade',
+        }
+
+        # Check if any assignment-related fields are being written
+        has_assignment_fields = any(field in vals for field in assignment_field_mapping)
+
+        # Handle assignment creation BEFORE super().write() to prevent ORM auto-creation
+        if has_assignment_fields:
+            for slide in self:
+                _logger.info("Processing slide %s, category=%s, has_assignment=%s", slide.id, slide.slide_category, bool(slide.assignment_id))
+                # Create assignment if slide category is assignment and no assignment exists
+                if slide.slide_category == 'assignment' and not slide.assignment_id:
+                    assignment_vals = {
+                        'name': vals.get('name', slide.name or _('New Assignment')),
+                        'slide_id': slide.id,
+                    }
+                    
+                    # Add assignment field values
+                    for slide_field, assignment_field in assignment_field_mapping.items():
+                        if slide_field in vals:
+                            assignment_vals[assignment_field] = vals[slide_field]
+                    
+                    _logger.info("Creating assignment for slide %s with vals: %s", slide.id, assignment_vals)
+                    assignment = self.env['rto.assignment'].create(assignment_vals)
+                    vals['assignment_id'] = assignment.id
+                    _logger.info("Assignment %s created and linked to slide", assignment.id)
+
         result = super().write(vals)
+
+        # Sync quiz questions if quiz definition changed
         if 'quiz_definition_id' in vals:
             for slide in self:
                 if slide.slide_category == 'quiz' and slide.quiz_definition_id:
                     slide.action_sync_quiz_questions()
+
         return result
 
     def action_view_outcomes(self):

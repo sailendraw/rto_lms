@@ -4,3 +4,4 @@
 
 from . import quiz_controller
 from . import website_slides_ext
+from . import assignment_controller

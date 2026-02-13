@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="seq_rto_assignment_submission" model="ir.sequence">
+            <field name="name">Assignment Submission Reference</field>
+            <field name="code">rto.assignment.submission</field>
+            <field name="prefix">SUB-</field>
+            <field name="padding">6</field>
+            <field name="number_increment">1</field>
+            <field name="implementation">standard</field>
+        </record>
+
+    </data>
+</odoo>

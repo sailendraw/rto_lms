@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Extend slide content template to show assignment when present -->
+    <template id="slide_content_detailed_assignment" inherit_id="website_slides.slide_content_detailed" name="Assignment Content in Slide">
+        <xpath expr="//div[@class='o_wslides_lesson_content_type']" position="inside">
+            <!-- Show assignment content if slide has assignment configured -->
+            <div t-if="slide.has_assignment">
+                <t t-call="rto_lms.assignment_slide_content"/>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- Trainer PDF Annotation Page -->
+    <template id="assignment_pdf_annotate" name="Assignment PDF Annotation">
+        <t t-call="website.layout">
+            <div class="container-fluid my-4">
+                <div class="row g-3">
+                    <div class="col-lg-8">
+                        <div class="card h-100">
+                            <div class="card-header d-flex align-items-center justify-content-between">
+                                <div>
+                                    <strong><t t-esc="assignment.name"/></strong>
+                                    <span class="text-muted">— <t t-esc="submission.user_id.display_name"/></span>
+                                </div>
+                                <a t-attf-href="/slides/slide/#{assignment.slide_id.id}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fa fa-arrow-left"/> Back
+                                </a>
+                            </div>
+                            <div class="card-body p-0" style="min-height: 70vh;">
+                                <iframe t-attf-src="/web/static/lib/pdfjs/web/viewer.html?file=#{file_url}#page=1&amp;annotationEditorMode=1"
+                                        style="width:100%; height:70vh; border:0;" title="PDF Annotation"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header bg-dark text-white">
+                                <strong>Grading</strong>
+                            </div>
+                            <div class="card-body">
+                                <t t-if="submission.state == 'submitted'">
+                                    <form method="POST" t-attf-action="/assignment/#{assignment.id}/grade" enctype="multipart/form-data">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <input type="hidden" name="submission_id" t-att-value="submission.id"/>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Grade (0 - <t t-esc="assignment.max_grade"/>)</label>
+                                            <input type="number" name="grade" step="0.01" min="0" t-att-max="assignment.max_grade" class="form-control" required="required"/>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Feedback</label>
+                                            <textarea name="feedback" class="form-control" rows="6" placeholder="Enter feedback for the student"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Feedback Files</label>
+                                            <input type="file" name="feedback_files" multiple="multiple" class="form-control"/>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fa fa-check"/> Submit Grade
+                                        </button>
+                                    </form>
+                                </t>
+                                <t t-else="">
+                                    <div class="alert alert-success">
+                                        <strong>Grade:</strong> <t t-esc="submission.grade"/> / <t t-esc="assignment.max_grade"/>
+                                        (<t t-esc="'%.1f' % submission.grade_percentage"/>%)
+                                        <br/>
+                                        <strong>Result:</strong>
+                                        <span t-if="submission.passed" class="badge bg-success">PASS</span>
+                                        <span t-else="" class="badge bg-danger">NOT YET COMPETENT</span>
+                                    </div>
+                                    <t t-if="(not submission.passed) and assignment.allow_resubmission">
+                                        <form method="POST" t-attf-action="/assignment/#{assignment.id}/reopen" class="mb-3">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="submission_id" t-att-value="submission.id"/>
+                                            <button type="submit" class="btn btn-warning w-100">
+                                                <i class="fa fa-undo"/> Allow Resubmission
+                                            </button>
+                                        </form>
+                                    </t>
+                                    <div t-if="submission.feedback" class="mb-3">
+                                        <strong>Feedback:</strong>
+                                        <div class="mt-2" t-out="submission.feedback"/>
+                                    </div>
+                                    <div t-if="submission.feedback_attachment_ids" class="mb-3">
+                                        <strong>Feedback Files</strong>
+                                        <ul class="list-group mt-2">
+                                            <li t-foreach="submission.feedback_attachment_ids" t-as="attachment"
+                                                class="list-group-item d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    <i class="fa fa-file-o me-2"/><t t-esc="attachment.name"/>
+                                                </span>
+                                                <a t-attf-href="/assignment/download/#{attachment.id}" class="btn btn-sm btn-link">
+                                                    <i class="fa fa-download"/>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Assignment content template - standalone, called directly when needed -->
+    <template id="assignment_slide_content" name="Assignment Slide Content">
+        <!-- Show single assignment for this slide -->
+        <t t-set="assignment" t-value="slide.assignment_id"/>
+        <t t-if="assignment">
+            <t t-set="is_trainer" t-value="request.env.user.has_group('website_slides.group_website_slides_officer') or request.env.user.has_group('website_slides.group_website_slides_manager')"/>
+            <div class="container my-5">
+                <div class="row">
+                    <div class="col-lg-10 offset-lg-1">
+
+                        <!-- Assignment Header -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h3 class="mb-0">
+                                    <i class="fa fa-file-text-o me-2"/>
+                                    <t t-esc="assignment.name"/>
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <!-- Description -->
+                                <div t-if="assignment.description" class="mb-3" t-out="assignment.description"/>
+
+                                <!-- Key Information -->
+                                <div class="row text-center mb-3">
+                                    <div class="col-md-3" t-if="assignment.due_date">
+                                        <div class="border rounded p-2">
+                                            <i class="fa fa-clock-o fa-2x text-primary d-block mb-2"/>
+                                            <small class="text-muted d-block">Due Date</small>
+                                            <strong><t t-esc="assignment.due_date" t-options="{'widget': 'datetime'}"/></strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="border rounded p-2">
+                                            <i class="fa fa-files-o fa-2x text-primary d-block mb-2"/>
+                                            <small class="text-muted d-block">Max Files</small>
+                                            <strong><t t-esc="assignment.max_files if assignment.max_files > 0 else 'Unlimited'"/></strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="border rounded p-2">
+                                            <i class="fa fa-hdd-o fa-2x text-primary d-block mb-2"/>
+                                            <small class="text-muted d-block">Max File Size</small>
+                                            <strong><t t-esc="assignment.max_file_size_mb"/> MB</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="border rounded p-2">
+                                            <i class="fa fa-check-circle fa-2x text-primary d-block mb-2"/>
+                                            <small class="text-muted d-block">Pass Grade</small>
+                                            <strong><t t-esc="assignment.pass_grade"/>%</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Instructions -->
+                                <div t-if="assignment.instructions" class="alert alert-info">
+                                    <h5><i class="fa fa-info-circle"/> Instructions</h5>
+                                    <t t-out="assignment.instructions"/>
+                                </div>
+
+                                <!-- Accepted File Types -->
+                                <div class="text-muted small">
+                                    <i class="fa fa-file"/> Accepted file types:
+                                    <strong><t t-esc="assignment.accepted_file_types"/></strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trainer Submissions Panel (Moodle-style) -->
+                        <t t-if="is_trainer">
+                            <t t-set="trainer_submissions" t-value="request.env['rto.assignment.submission'].sudo().search([('assignment_id', '=', assignment.id), ('state', 'in', ['submitted', 'graded'])], order='submitted_on desc, create_date desc')"/>
+                            <div class="card mb-4">
+                                <div class="card-header bg-dark text-white">
+                                    <h4 class="mb-0"><i class="fa fa-inbox me-2"/>Trainer - Submissions</h4>
+                                </div>
+                                <div class="card-body">
+                                    <t t-if="trainer_submissions">
+                                        <div class="accordion" id="trainerSubmissions">
+                                            <div t-foreach="trainer_submissions" t-as="submission" class="accordion-item">
+                                                <h2 class="accordion-header" t-attf-id="heading-#{submission.id}">
+                                                    <button class="accordion-button collapsed" type="button"
+                                                            data-bs-toggle="collapse"
+                                                            t-attf-data-bs-target="#collapse-#{submission.id}"
+                                                            t-attf-aria-controls="collapse-#{submission.id}">
+                                                        <span class="me-2"><strong><t t-esc="submission.user_id.display_name"/></strong></span>
+                                                        <span class="text-muted">Attempt <t t-esc="submission.attempt_number"/></span>
+                                                        <span class="ms-3">
+                                                            <span t-if="submission.state == 'submitted'" class="badge bg-info">Submitted</span>
+                                                            <span t-if="submission.state == 'graded'" class="badge bg-success">Graded</span>
+                                                        </span>
+                                                    </button>
+                                                </h2>
+                                                <div class="accordion-collapse collapse" t-attf-id="collapse-#{submission.id}"
+                                                     t-attf-aria-labelledby="heading-#{submission.id}"
+                                                     data-bs-parent="#trainerSubmissions">
+                                                    <div class="accordion-body">
+                                                        <div class="mb-3">
+                                                            <strong>Submitted:</strong>
+                                                            <t t-esc="submission.submitted_on" t-options="{'widget': 'datetime'}"/>
+                                                            <span t-if="submission.is_late" class="badge bg-warning ms-2">Late</span>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <strong>Submitted Files</strong>
+                                                            <ul class="list-group mt-2">
+                                                                <li t-foreach="submission.attachment_ids" t-as="attachment"
+                                                                    class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    <span>
+                                                                        <i class="fa fa-file-o me-2"/><t t-esc="attachment.name"/>
+                                                                        <small class="text-muted">(<t t-esc="'%.2f' % (attachment.file_size / 1024 / 1024)"/> MB)</small>
+                                                                    </span>
+                                                                    <span class="d-flex gap-2">
+                                                                        <a t-attf-href="/assignment/download/#{attachment.id}" class="btn btn-sm btn-link">
+                                                                            <i class="fa fa-download"/>
+                                                                        </a>
+                                                                                                <a t-if="attachment.mimetype == 'application/pdf' or (attachment.name and attachment.name.lower().endswith('.pdf'))"
+                                                                                                    t-attf-href="/assignment/#{assignment.id}/annotate?submission_id=#{submission.id}&amp;attachment_id=#{attachment.id}"
+                                                                           class="btn btn-sm btn-outline-primary">
+                                                                            <i class="fa fa-pencil"/> Annotate
+                                                                        </a>
+                                                                    </span>
+                                                                </li>
+                                                                <li t-if="not submission.attachment_ids" class="list-group-item text-muted">No files uploaded.</li>
+                                                            </ul>
+                                                        </div>
+
+                                                        <t t-if="submission.state == 'submitted'">
+                                                            <form method="POST" t-attf-action="/assignment/#{assignment.id}/grade" enctype="multipart/form-data">
+                                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                                <input type="hidden" name="submission_id" t-att-value="submission.id"/>
+                                                                <div class="row g-3">
+                                                                    <div class="col-md-4">
+                                                                        <label class="form-label fw-bold">Grade (0 - <t t-esc="assignment.max_grade"/>)</label>
+                                                                        <input type="number" name="grade" step="0.01" min="0" t-att-max="assignment.max_grade" class="form-control" required="required"/>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <label class="form-label fw-bold">Feedback</label>
+                                                                        <textarea name="feedback" class="form-control" rows="4" placeholder="Enter feedback for the student"></textarea>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <label class="form-label fw-bold">Feedback Files</label>
+                                                                        <input type="file" name="feedback_files" multiple="multiple" class="form-control"/>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="mt-3">
+                                                                    <button type="submit" class="btn btn-primary">
+                                                                        <i class="fa fa-check"/> Submit Grade
+                                                                    </button>
+                                                                </div>
+                                                            </form>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <div class="alert alert-success">
+                                                                <strong>Grade:</strong> <t t-esc="submission.grade"/> / <t t-esc="assignment.max_grade"/>
+                                                                (<t t-esc="'%.1f' % submission.grade_percentage"/>%)
+                                                                <br/>
+                                                                <strong>Result:</strong>
+                                                                <span t-if="submission.passed" class="badge bg-success">PASS</span>
+                                                                <span t-else="" class="badge bg-danger">NOT YET COMPETENT</span>
+                                                            </div>
+                                                            <t t-if="(not submission.passed) and assignment.allow_resubmission">
+                                                                <form method="POST" t-attf-action="/assignment/#{assignment.id}/reopen">
+                                                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                                    <input type="hidden" name="submission_id" t-att-value="submission.id"/>
+                                                                    <button type="submit" class="btn btn-warning mb-3">
+                                                                        <i class="fa fa-undo"/> Allow Resubmission
+                                                                    </button>
+                                                                </form>
+                                                            </t>
+                                                            <div t-if="submission.feedback" class="mb-3">
+                                                                <strong>Feedback:</strong>
+                                                                <div class="mt-2" t-out="submission.feedback"/>
+                                                            </div>
+                                                            <div t-if="submission.feedback_attachment_ids" class="mb-3">
+                                                                <strong>Feedback Files</strong>
+                                                                <ul class="list-group mt-2">
+                                                                    <li t-foreach="submission.feedback_attachment_ids" t-as="attachment"
+                                                                        class="list-group-item d-flex justify-content-between align-items-center">
+                                                                        <span>
+                                                                            <i class="fa fa-file-o me-2"/><t t-esc="attachment.name"/>
+                                                                        </span>
+                                                                        <a t-attf-href="/assignment/download/#{attachment.id}" class="btn btn-sm btn-link">
+                                                                            <i class="fa fa-download"/>
+                                                                        </a>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </t>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="alert alert-info mb-0">No submissions yet.</div>
+                                    </t>
+                                </div>
+                            </div>
+                        </t>
+
+                        <!-- Student Submission Interface -->
+                        <t t-if="not is_trainer">
+                            <t t-set="current_submission" t-value="request.env['rto.assignment.submission'].search([('assignment_id', '=', assignment.id), ('user_id', '=', request.env.user.partner_id.id), ('state', '=', 'draft')], limit=1)"/>
+                            <t t-set="pending_submission" t-value="request.env['rto.assignment.submission'].search([('assignment_id', '=', assignment.id), ('user_id', '=', request.env.user.partner_id.id), ('state', '=', 'submitted')], limit=1)"/>
+                            <t t-set="latest_non_draft" t-value="request.env['rto.assignment.submission'].search([('assignment_id', '=', assignment.id), ('user_id', '=', request.env.user.partner_id.id), ('state', '!=', 'draft')], order='create_date desc', limit=1)"/>
+                            <t t-set="can_submit" t-value="(not pending_submission) and (current_submission or not latest_non_draft)"/>
+
+                        <!-- Upload Form -->
+                            <div t-if="assignment.is_available and not assignment.is_past_cutoff and can_submit" class="card mb-4">
+                            <div class="card-header bg-success text-white">
+                                <h4 class="mb-0">
+                                    <i class="fa fa-upload me-2"/>
+                                    Your Submission
+                                    <t t-if="current_submission">
+                                        (Attempt <t t-esc="current_submission.attempt_number"/>)
+                                    </t>
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" t-attf-action="/assignment/#{assignment.id}/submit" enctype="multipart/form-data">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Upload Files</label>
+                                        <input type="file" name="files" multiple="multiple" class="form-control"/>
+                                        <div class="form-text">
+                                            Select files (max <t t-esc="assignment.max_files if assignment.max_files > 0 else 'unlimited'"/> files, <t t-esc="assignment.max_file_size_mb"/> MB each)
+                                        </div>
+                                    </div>
+                                    <div t-if="current_submission and current_submission.attachment_ids" class="mb-3">
+                                        <label class="form-label fw-bold">Uploaded Files</label>
+                                        <ul class="list-group">
+                                            <li t-foreach="current_submission.attachment_ids" t-as="attachment" class="list-group-item d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    <i class="fa fa-file-o me-2"/><t t-esc="attachment.name"/>
+                                                    <small class="text-muted">(<t t-esc="'%.2f' % (attachment.file_size / 1024 / 1024)"/> MB)</small>
+                                                </span>
+                                                <a t-attf-href="/assignment/download/#{attachment.id}" class="btn btn-sm btn-link">
+                                                    <i class="fa fa-download"/>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" name="action" value="save_draft" class="btn btn-secondary">
+                                            <i class="fa fa-save"/> Save Draft
+                                        </button>
+                                        <button type="submit" name="action" value="submit" class="btn btn-primary" t-if="assignment.require_submit_button">
+                                            <i class="fa fa-check"/> Submit for Grading
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                            <div t-if="assignment.is_available and not assignment.is_past_cutoff and not can_submit" class="alert alert-warning">
+                            <i class="fa fa-lock me-1"/>
+                            <t t-if="pending_submission">
+                                Your submission is pending grading. You cannot upload again.
+                            </t>
+                            <t t-elif="latest_non_draft and assignment.allow_resubmission and not current_submission">
+                                Resubmission is available, but your trainer must allow it first.
+                            </t>
+                            <t t-elif="latest_non_draft and not assignment.allow_resubmission">
+                                Resubmission is not allowed for this assignment.
+                            </t>
+                        </div>
+
+                        <!-- Submission History -->
+                            <t t-set="past_submissions" t-value="request.env['rto.assignment.submission'].search([('assignment_id', '=', assignment.id), ('user_id', '=', request.env.user.partner_id.id), ('state', 'in', ['draft', 'submitted', 'graded'])], order='attempt_number desc')"/>
+                            <div t-if="past_submissions" class="card">
+                                <div class="card-header">
+                                    <h4 class="mb-0"><i class="fa fa-history me-2"/>Submission History</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="accordion" id="studentSubmissionHistory">
+                                        <div t-foreach="past_submissions" t-as="submission" class="accordion-item">
+                                            <h2 class="accordion-header" t-attf-id="student-heading-#{submission.id}">
+                                                <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse"
+                                                        t-attf-data-bs-target="#student-collapse-#{submission.id}"
+                                                        t-attf-aria-controls="student-collapse-#{submission.id}">
+                                                    <span class="me-2"><strong>Attempt <t t-esc="submission.attempt_number"/></strong></span>
+                                                    <span class="ms-2">
+                                                        <span t-if="submission.state == 'draft'" class="badge bg-secondary">Draft</span>
+                                                        <span t-if="submission.state == 'submitted'" class="badge bg-info">Submitted</span>
+                                                        <span t-if="submission.state == 'graded'" class="badge bg-success">Graded</span>
+                                                    </span>
+                                                </button>
+                                            </h2>
+                                            <div class="accordion-collapse collapse" t-attf-id="student-collapse-#{submission.id}"
+                                                 t-attf-aria-labelledby="student-heading-#{submission.id}"
+                                                 data-bs-parent="#studentSubmissionHistory">
+                                                <div class="accordion-body">
+                                                    <div class="mb-2">
+                                                        <strong>Created:</strong>
+                                                        <t t-esc="submission.created_on" t-options="{'widget': 'datetime'}"/>
+                                                    </div>
+                                                    <div class="mb-3" t-if="submission.submitted_on">
+                                                        <strong>Submitted:</strong>
+                                                        <t t-esc="submission.submitted_on" t-options="{'widget': 'datetime'}"/>
+                                                        <span t-if="submission.is_late" class="badge bg-warning ms-2">Late</span>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <strong>Uploaded Files</strong>
+                                                        <ul class="list-group mt-2">
+                                                            <li t-foreach="submission.attachment_ids" t-as="attachment"
+                                                                class="list-group-item d-flex justify-content-between align-items-center">
+                                                                <span>
+                                                                    <i class="fa fa-file-o me-2"/><t t-esc="attachment.name"/>
+                                                                    <small class="text-muted">(<t t-esc="'%.2f' % (attachment.file_size / 1024 / 1024)"/> MB)</small>
+                                                                </span>
+                                                                <a t-attf-href="/assignment/download/#{attachment.id}" class="btn btn-sm btn-link">
+                                                                    <i class="fa fa-download"/>
+                                                                </a>
+                                                            </li>
+                                                            <li t-if="not submission.attachment_ids" class="list-group-item text-muted">No files uploaded.</li>
+                                                        </ul>
+                                                    </div>
+
+                                                    <t t-if="submission.state == 'graded'">
+                                                        <div class="alert alert-success">
+                                                            <strong>Grade:</strong> <t t-esc="submission.grade"/> / <t t-esc="assignment.max_grade"/>
+                                                            (<t t-esc="'%.1f' % submission.grade_percentage"/>%)
+                                                            <br/>
+                                                            <strong>Result:</strong>
+                                                            <span t-if="submission.passed" class="badge bg-success">PASS</span>
+                                                            <span t-else="" class="badge bg-danger">NOT YET COMPETENT</span>
+                                                        </div>
+                                                        <div t-if="submission.feedback" class="mb-3">
+                                                            <strong>Feedback:</strong>
+                                                            <div class="mt-2" t-out="submission.feedback"/>
+                                                        </div>
+                                                        <div t-if="submission.feedback_attachment_ids" class="mb-0">
+                                                            <strong>Feedback Files</strong>
+                                                            <ul class="list-group mt-2">
+                                                                <li t-foreach="submission.feedback_attachment_ids" t-as="attachment"
+                                                                    class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    <span>
+                                                                        <i class="fa fa-file-o me-2"/><t t-esc="attachment.name"/>
+                                                                    </span>
+                                                                    <a t-attf-href="/assignment/download/#{attachment.id}" class="btn btn-sm btn-link">
+                                                                        <i class="fa fa-download"/>
+                                                                    </a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </t>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
+        <div t-else="" class="container my-5">
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle"/> No assignment configured for this slide.
+            </div>
+        </div>
+    </template>
+
+    <!-- Error Template -->
+    <template id="assignment_error" name="Assignment Error">
+        <t t-call="website.layout">
+            <div class="container my-5">
+                <div class="row">
+                    <div class="col-lg-8 offset-lg-2">
+                        <div class="alert alert-danger">
+                            <h4><i class="fa fa-exclamation-triangle"/> Error</h4>
+                            <p t-esc="error_message"/>
+                        </div>
+                        <a t-if="assignment" t-attf-href="/slides/slide/#{assignment.slide_id.id}?fullscreen=1" class="btn btn-primary">
+                            <i class="fa fa-arrow-left"/> Back to Assignment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>

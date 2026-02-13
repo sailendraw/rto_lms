@@ -20,7 +20,38 @@ _logger.info("="*80)
 
 class RTOWebsiteSlides(WebsiteSlides):
     """Extend WebsiteSlides to pass enhanced question type data to templates"""
-    
+
+    @http.route(['/slides/add_slide'], type='jsonrpc', auth='user', methods=['POST'], website=True)
+    def create_slide(self, *args, **post):
+        """Override to handle assignment slide redirection"""
+        result = super().create_slide(*args, **post)
+
+        # Assignment slides already redirect to slide form by default
+        # The assignment tab will be visible and contain the assignment fields
+
+        return result
+
+    @http.route('/slides/slide/get_html_content', type="jsonrpc", auth="public", website=True)
+    def get_html_content(self, slide_id):
+        """Override to handle assignment slides by rendering the assignment template"""
+        fetch_res = self._fetch_slide(slide_id)
+        if fetch_res.get('error'):
+            return fetch_res
+
+        slide = fetch_res['slide']
+
+        # For assignment slides, render the assignment template
+        if slide.slide_category == 'assignment':
+            html_content = request.env['ir.qweb']._render('rto_lms.assignment_slide_content', {
+                'slide': slide,
+            })
+            return {
+                'html_content': html_content
+            }
+
+        # For other slides, use parent implementation
+        return super().get_html_content(slide_id)
+
     @http.route('/slides/slide/quiz/question_add_or_update', type="jsonrpc", auth="user", website=True)
     def slide_quiz_question_add_or_update(self, slide_id, question, sequence, answer_ids, existing_question_id=None, question_type=None):
         """Override to pass question as dictionary and handle question_type"""

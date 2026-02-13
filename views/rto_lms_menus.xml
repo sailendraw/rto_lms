@@ -108,6 +108,20 @@
               action="action_rto_evidence_log"
               sequence="30"/>
 
+    <!-- Reporting -->
+    <menuitem id="menu_rto_reporting"
+              name="Reporting"
+              parent="menu_rto_lms_root"
+              sequence="40"
+              groups="website_slides.group_website_slides_officer,website_slides.group_website_slides_manager"/>
+
+    <menuitem id="menu_rto_assignment_submissions"
+              name="Assignments"
+              parent="menu_rto_reporting"
+              action="action_rto_assignment_submission"
+              sequence="10"
+              groups="website_slides.group_website_slides_officer,website_slides.group_website_slides_manager"/>
+
     <!-- Configuration -->
     <menuitem id="menu_rto_lms_config"
               name="Configuration"

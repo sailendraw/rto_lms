@@ -17,3 +17,7 @@ from . import quiz_question_matching_pair
 from . import quiz_definition
 from . import quiz_attempt
 from . import quiz_attempt_answer
+
+# Assignment models
+from . import rto_assignment
+from . import rto_assignment_submission

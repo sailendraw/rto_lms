@@ -48,9 +48,11 @@ Dependencies:
         # Security
         'security/ir.model.access.csv',
         'security/lms_quiz_security.xml',
+        'security/rto_assignment_security.xml',
         # Data
         'data/rto_quiz_sequence.xml',
         'data/rto_delivery_mode_data.xml',
+        'data/rto_assignment_sequence.xml',
         # Views
         'views/slide_channel_views.xml',
         'views/slide_slide_views.xml',
@@ -58,17 +60,24 @@ Dependencies:
         'views/rto_evidence_log_views.xml',
         'views/rto_assessment_outcome_views.xml',
         'views/lms_quiz_views.xml',
+        'views/rto_assignment_views.xml',
+        'views/rto_assignment_submission_views.xml',
         'views/rto_lms_menus.xml',
         # Website / Runtime templates
         'views/portal_quiz_templates.xml',
         'views/website_slides_quiz_templates.xml',
         'views/rto_quiz_question_form_templates.xml',
+        'views/website_assignment_templates.xml',
     ],
     'assets': {
         'web.assets_frontend': [
             'rto_lms/static/src/js/rto_quiz_question_form.js',
             'rto_lms/static/src/js/slides_course_quiz_patch.js',
             'rto_lms/static/src/xml/slide_quiz_override.xml',
+            'rto_lms/static/src/js/slide_upload_dialog_patch.js',
+            'rto_lms/static/src/xml/slide_upload_dialog_patch.xml',
+            'rto_lms/static/src/js/slides_course_fullscreen_assignment_patch.js',
+            'rto_lms/static/src/xml/slides_fullscreen_assignment.xml',
         ],
     },
     'demo': [],
